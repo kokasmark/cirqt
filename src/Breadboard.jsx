@@ -2,8 +2,11 @@ import React,{ useState,useRef, useEffect } from 'react'
 import './App.css';
 import Draggable from 'react-draggable';
 import Xarrow, {useXarrow, Xwrapper} from 'react-xarrows';
+import Circuit from './Circuit';
+import Led from './Led';
+import Switch from './Switch';
 
-function Breadboard({tree}) {
+function Breadboard({tree, update}) {
   const updateXarrow = useXarrow();
   const nodeRefs = useRef([]);
   if (nodeRefs.current.length !== tree.length) {
@@ -36,44 +39,23 @@ function Breadboard({tree}) {
     return connections;
   };
 
-const [connections,setConnections] = useState(getConnections(tree));
+  const [connections,setConnections] = useState(getConnections(tree));
 
-useEffect(()=>{
-  setConnections(getConnections(tree))
-},[tree])
+  const predefinedCircuits = ["led", "switch", "matrix4x4"]
+
+  useEffect(()=>{
+    console.log('Wiring...')
+    setConnections(getConnections(tree))
+  },[tree])
 
 return (
   <div className="breadboard">
       {tree.map((circuit, index) => (
-          <Draggable
-              key={`circuit-${index}`}
-              onDrag={updateXarrow}
-              onStop={updateXarrow}
-              nodeRef={nodeRefs.current[index]}
-          >
-              <div className="circuit-container" id={`circuit-${index}`} ref={nodeRefs.current[index]}>
-                  <span className="pins">
-                      {circuit.inputs?.map((pin, index) => (
-                          <span style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }} key={`${circuit.name}-${pin.name}`}>
-                              {(pin.value && pin.type === "literal") && <p style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>{pin.name} <span style={{ color: 'violet' }}>{pin.value ? pin.value : 'None'}</span></p>}
-                              <span style={{ width: 5, height: 20, background: pin.voltage === "H" ? 'violet':'white', display: 'block', position: 'absolute', top: 55 }} id={`${circuit.name}-${pin.name}`} ></span>
-                          </span>
-                      ))}
-                  </span>
-
-                  <div className="circuit">
-                      <p>{circuit.name} - {circuit.circuit}</p>
-                  </div>
-
-                  <span className="pins">
-                      {circuit.outputs?.map((pin, index) => (
-                          <span style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }} key={`${circuit.name}-${pin.name}`}>
-                              <span style={{ width: 5, height: 20, background: pin.voltage === "H" ? 'violet':'white', display: 'block', position: 'absolute', top: 125 }} id={`${circuit.name}-${pin.name}`}></span>
-                          </span>
-                      ))}
-                  </span>
-              </div>
-          </Draggable>
+          <span>
+            {circuit.circuit === "led" && <Led circuit={circuit} index={index} updateXarrow={updateXarrow}/>}
+            {circuit.circuit === "switch" && <Switch circuit={circuit} index={index} updateXarrow={updateXarrow} update={update}/>}
+            {!predefinedCircuits.includes(circuit.circuit) && <Circuit circuit={circuit} index={index} updateXarrow={updateXarrow}/>}
+          </span>
       ))}
 
       {connections.map((connection, index) => (
@@ -82,16 +64,19 @@ return (
               start={connection.start}
               end={connection.end}
               lineColor={connection.lineColor}
-              headColor={'white'}
+              headColor={connection.lineColor}
               headShape={'circle'}
               headSize={4}
-              tailColor={'white'}
+              tailColor={connection.lineColor}
               showTail={true}
               tailSize={4}
               tailShape={'circle'}
-              labels={{ start: connection.startPinName, end: connection.endPinName }}
+              labels={{
+                middle: `${connection.startPinName} → ${connection.endPinName}`, // Centered label
+              }}
               path="grid"
-              gridBreak={`${(index/connections.length)*100}%`}
+              gridBreak={`${((index+1)/(connections.length+1))*100}%`}
+              animateDrawing={0.5}
           />
       ))}
   </div>

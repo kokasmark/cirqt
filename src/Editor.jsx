@@ -1,31 +1,25 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, forwardRef, useImperativeHandle } from "react";
 import "./App.css";
 
-function Editor({callback}) {
+const Editor = forwardRef(({ callback }, ref) => {
     const [code, setCode] = useState(`
-[multiplexer <d1 <clk >o1 >o2 >o3
-    o1 < d1 & H
-    o2 < d1 x| L
-    o3 < d1 !& H
-]
-
-[demultiplexer >o1 <clk <d1 <d2 <d3
+[board <H <_ 
+    led l
+    switch s    
     
-]
-
-[board <5v <_ 
-    multiplexer m
-    demultiplexer d
-    
-    m.clk < 500hz
-    d.clk < 500hz
-
-    d.d1 < m.o1
-    d.d2 < m.o2
-    d.d3 < m.o3
-
-    m.d1 < H
+    s.i < H
+    l.p < s.o
 ]`);
+
+    const circuits = `
+    [led <p >o
+        o < p
+    ]
+    [switch <p >o
+        o < p
+    ]
+    [matrix4x4]
+    `
 
     const [tree, setTree] = useState([]);
 
@@ -50,9 +44,8 @@ function Editor({callback}) {
     };
 
     const highlightSyntax = (text) => {
-        const voltagePattern = /\b(\d+(\.\d*)?)v\b/g;
-        const hertzPattern = /\b(\d+(\.\d*)?)hz\b/g;
         const circuitNamePattern = /\[\s*(\w+)/g;
+        const hertzPattern = /\b(\d+(\.\d*)?)hz\b/g;
 
         const validGateCombinations = [
             "&", "|", "!", //Basic
@@ -65,7 +58,7 @@ function Editor({callback}) {
         let circuitNames = [];
         let match;
 
-        while ((match = circuitNamePattern.exec(text)) !== null) {
+        while ((match = circuitNamePattern.exec(text+circuits)) !== null) {
             circuitNames.push(match[1]);
         }
 
@@ -73,7 +66,7 @@ function Editor({callback}) {
 
         return parts.map((part, index) => {
             if (circuitNames.includes(part)) {
-            return <span key={index} className="keyword" data-type="Keyword" data-desc="A circuits name.">{part}</span>;
+            return <span key={index} className="keyword" data-type="Circuit" data-desc="An instace can be created.">{part}</span>;
             }
             if (gates.some((gate) => validGateCombinations.includes(part))) {
             return <span key={index} className="gate" data-type="Gate" data-desc="A logical gate.">{part}</span>;
@@ -84,9 +77,9 @@ function Editor({callback}) {
             if (consts.includes(part)) {
             return <span key={index} className="type" data-type="Constant" data-desc="A constant value.">{part}</span>;
             }
-            if (voltagePattern.test(part) || hertzPattern.test(part)) {
-            return <span key={index} className="voltage" data-type="Type" data-desc="Hertz, Voltage,...">{part}</span>;
-            }
+            if (hertzPattern.test(part)) {
+                return <span key={index} className="voltage" data-type="Type" data-desc="Hertz, Voltage,...">{part}</span>;
+                }
             return part;
         });
     };
@@ -100,7 +93,8 @@ function Editor({callback}) {
     
         let declaredCircuits = new Map();
         let tree = [];
-    
+        
+        text = text + circuits;
         
         for (let match of text.matchAll(circuitPattern)) {
             let circuitName = match[1]; 
@@ -185,7 +179,6 @@ function Editor({callback}) {
     
     
     const parseLogicExpression = (expr) => {
-        
         expr = expr.replace(/\bH\b/g, "true");
         expr = expr.replace(/\bL\b/g, "false");
     
@@ -193,6 +186,7 @@ function Editor({callback}) {
         expr = expr.replace(/\s*&\s*/g, " && ");    
         expr = expr.replace(/\s*x\|\s*/g, " !== "); 
         expr = expr.replace(/\s*!&\s*/g, " NAND "); 
+        expr = expr.replace(/\s*!\|\s*/g, " NOR ");  
     
         
         expr = expr.replace(/\b([a-zA-Z_]\w*)\b/g, (match) => {
@@ -201,7 +195,8 @@ function Editor({callback}) {
         });
     
         
-        expr = expr.replace(/pins\.(\w+)\s*NAND\s*pins\.(\w+)/g, "! (pins.$1 && pins.$2)");
+        expr = expr.replace(/pins\.(\w+)\s*NAND\s*pins\.(\w+)/g, "!(pins.$1 && pins.$2)");
+        expr = expr.replace(/pins\.(\w+)\s*NOR\s*pins\.(\w+)/g, "!(pins.$1 || pins.$2)");
         return expr;
     };
     
@@ -226,78 +221,122 @@ function Editor({callback}) {
     };
 
     const evaluate = (tree) => {
-    let pinValues = new Map(); 
-
+        let pinValues = new Map(); // Stores pin states during evaluation
+        let connectionMap = new Map(); // Stores input-output mappings
     
-    tree.forEach(instance => {
-        instance.inputs.forEach(pin => {
-            if (pin.type === "literal") {
-                pinValues.set(`${instance.name}-${pin.name}`, pin.value === "H");
-            }
-        });
-    });
-
-    let changed = true;
-    while (changed) {
-        changed = false;
-
-        
+        // First pass: Initialize known values (literals & outputs)
         tree.forEach(instance => {
-            let evaluators = extractEvaluators(instance.circuitBody);
-
+            instance.inputs.forEach(pin => {
+                if (pin.type === "literal") {
+                    pinValues.set(`${instance.name}-${pin.name}`, pin.value === "H");
+                }
+            });
+    
+            // Store connections between input and output pins
+            instance.outputs.forEach(outputPin => {
+                let outputKey = `${instance.name}-${outputPin.name}`;
+                pinValues.set(outputKey, outputPin.voltage === "H");
+    
+                instance.inputs.forEach(inputPin => {
+                    if (inputPin.type === "connection") {
+                        const [srcInstance, srcPin] = inputPin.value.split("-");
+                        let srcKey = `${srcInstance}-${srcPin}`;
+    
+                        if (!connectionMap.has(srcKey)) {
+                            connectionMap.set(srcKey, []);
+                        }
+                        connectionMap.get(srcKey).push(outputKey);
+                    }
+                });
+            });
+        });
+    
+        let changed = true;
+        while (changed) {
+            changed = false;
+    
+            tree.forEach(instance => {
+                let evaluators = extractEvaluators(instance.circuitBody);
+    
+                instance.outputs.forEach(outputPin => {
+                    let outputKey = `${instance.name}-${outputPin.name}`;
+                    let inputs = {}; 
+    
+                    instance.inputs.forEach(pin => {
+                        let inputKey = `${instance.name}-${pin.name}`;
+    
+                        if (pin.type === "connection") {
+                            const [srcInstance, srcPin] = pin.value.split("-");
+                            let srcKey = `${srcInstance}-${srcPin}`;
+                            inputs[pin.name] = pinValues.get(srcKey) ?? false;
+                        } else {
+                            inputs[pin.name] = pinValues.get(inputKey) ?? false;
+                        }
+                    });
+    
+                    // Evaluate logic expression if present
+                    if (evaluators[outputPin.name]) {
+                        let newValue = evaluators[outputPin.name](inputs);
+                        if (pinValues.get(outputKey) !== newValue) {
+                            pinValues.set(outputKey, newValue);
+                            outputPin.voltage = newValue ? 'H' : 'L';
+                            changed = true;
+                        }
+                    }
+                });
+            });
+    
+            // ✅ Propagate values through direct connections
+            pinValues.forEach((value, pinKey) => {
+                if (connectionMap.has(pinKey)) {
+                    connectionMap.get(pinKey).forEach(destKey => {
+                        if (pinValues.get(destKey) !== value) {
+                            pinValues.set(destKey, value);
+                            changed = true;
+                        }
+                    });
+                }
+            });
+        }
+    
+        // Final pass: Apply resolved values to actual tree
+        tree.forEach(instance => {
             instance.outputs.forEach(outputPin => {
                 let pinKey = `${instance.name}-${outputPin.name}`;
-
-                if (!pinValues.has(pinKey)) { 
-                    try {
-                        let inputs = {};
-                        instance.inputs.forEach(pin => {
-                            let inputKey = `${instance.name}-${pin.name}`;
-                            inputs[pin.name] = pinValues.get(inputKey) ?? false; 
-                        });
-
-                        if (evaluators[outputPin.name]) {
-                            let newValue = evaluators[outputPin.name](inputs);
-                            pinValues.set(pinKey, newValue);
-                            changed = true;
-
-                            
-                            outputPin.voltage = newValue ? 'H' : 'L';
-                        }
-                    } catch (err) {
-                        console.error(`Error evaluating ${pinKey}:`, err);
+                if (pinValues.has(pinKey)) {
+                    outputPin.voltage = pinValues.get(pinKey) ? 'H' : 'L';
+                }
+            });
+    
+            instance.inputs.forEach(inputPin => {
+                if (inputPin.type === "connection") {
+                    const [srcInstance, srcPin] = inputPin.value.split("-");
+                    let srcKey = `${srcInstance}-${srcPin}`;
+                    if (pinValues.has(srcKey)) {
+                        inputPin.voltage = pinValues.get(srcKey) ? 'H' : 'L';
                     }
                 }
             });
         });
-    }
-
     
-    tree.forEach(instance => {
-        instance.outputs.forEach(outputPin => {
-            let pinKey = `${instance.name}-${outputPin.name}`;
-            if (pinValues.has(pinKey)) {
-                outputPin.voltage = pinValues.get(pinKey) ? 'H' : 'L';
-            }
-        });
-    });
-
-    console.log("Updated Tree:", tree);
-    return pinValues;
-};
-
-useEffect(() => {
-    evaluate(tree);
-}, [tree]);
+        console.log("Evaluation Complete:", tree);
+        return pinValues;
+    };
+    
+    
+    useEffect(() => {
+        evaluate(tree);
+    }, [tree]);
 
 
     useEffect(()=>{
         dismantle(code);
     }, [])
 
-    function escapeRegex(str) {
-        return str.replace(/[-\/\\^$*+?.()|[\]{}]/g, "\\$&");
-    }
+    useImperativeHandle(ref, () => ({
+        evaluate
+    }));
+
 
     return (
         <div className="editor">
@@ -312,7 +351,7 @@ useEffect(() => {
             </pre>
         </div>
     );
-}
+});
 
 export default Editor;
 

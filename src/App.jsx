@@ -1,10 +1,30 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import './App.css'
 import Editor from './Editor'
 import Breadboard from './Breadboard'
 
 function App() {
   const [tree, setTree] = useState([]);
+  const editor = useRef(null);
+
+  const updateTree = (updatedCircuit) => {
+    console.log(updatedCircuit.inputs[0])
+    setTree(prevTree => {
+        const updatedTree = prevTree.map(circuit =>
+            circuit.name === updatedCircuit.name ? updatedCircuit : circuit
+        );
+
+        if (editor.current) {
+            editor.current.evaluate(updatedTree);
+        } else {
+            console.warn("Editor ref is not assigned yet!");
+        }
+
+        return updatedTree; 
+    });
+};
+
+
   return (
     <div className='app'>
       <div className='header'>
@@ -19,8 +39,8 @@ function App() {
 
     
       <div className='container'>
-        <Editor callback={setTree} />
-        <Breadboard tree={tree} />
+        <Editor callback={setTree} ref={editor}/>
+        <Breadboard tree={tree} update={updateTree}/>
       </div>
     </div>
   )
