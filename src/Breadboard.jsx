@@ -59,7 +59,8 @@ return (
       ))}
 
       {connections.map((connection, index) => (
-          <Xarrow
+          <span className={connection.lineColor === "violet" ? 'active-wire' : ''}>
+            <Xarrow
               key={`connection-${index}`}
               start={connection.start}
               end={connection.end}
@@ -78,6 +79,7 @@ return (
               gridBreak={`${((index+1)/(connections.length+1))*100}%`}
               animateDrawing={0.5}
           />
+          </span>
       ))}
   </div>
 );

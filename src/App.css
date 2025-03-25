@@ -189,6 +189,28 @@ textarea {
   align-items: center;
 }
 
+.active-wire path {
+  stroke-width: 4;
+  stroke-dasharray: 10 5;  /* Dash pattern */
+  stroke-dashoffset: 0;   /* Start at 0 */
+  animation: dashMove 1s linear infinite;
+}
+
+@keyframes dashMove {
+  from {
+      stroke-dashoffset: 0;
+  }
+  to {
+      stroke-dashoffset: -15px; /* Move smoothly */
+  }
+}
+
+@keyframes dash {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
 @keyframes pop {
   0%{
     transform: scale(0);

@@ -13,9 +13,9 @@ function Led({circuit, index, updateXarrow}){
         nodeRef={nodeRef}
     >
     <span 
-    id={`${circuit.name}-p`}
+    id={`${circuit.name}-in`}
     style={{display: 'block',width: 50, height: 50,backgroundColor: circuit.outputs[0].voltage === 'H' ? 'red': 'grey', 
-    borderRadius: '50%'}} ref={nodeRef}></span>
+    borderRadius: '50%', filter:  circuit.outputs[0].voltage === 'H' ? 'drop-shadow(0px 0px 10px red)' : ''}} ref={nodeRef}></span>
     </Draggable>)
 }
 

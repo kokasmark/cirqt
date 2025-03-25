@@ -8,7 +8,6 @@ function App() {
   const editor = useRef(null);
 
   const updateTree = (updatedCircuit) => {
-    console.log(updatedCircuit.inputs[0])
     setTree(prevTree => {
         const updatedTree = prevTree.map(circuit =>
             circuit.name === updatedCircuit.name ? updatedCircuit : circuit

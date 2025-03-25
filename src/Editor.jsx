@@ -3,20 +3,33 @@ import "./App.css";
 
 const Editor = forwardRef(({ callback }, ref) => {
     const [code, setCode] = useState(`
+[a <i1 <i2 >o1
+    o1 < i1 & i2
+]
+[b <i1 <i2 >o1
+    o1 < i1 | i2
+]
 [board <H <_ 
+    a aa
+    b bb
     led l
     switch s    
     
-    s.i < H
-    l.p < s.o
+    aa.i1 < H
+    aa.i2 < s.out
+
+    bb.i1 < aa.o1
+    bb.i2 < L
+
+    l.in < bb.o1
 ]`);
 
     const circuits = `
-    [led <p >o
-        o < p
+    [led <in >out
+        out < in
     ]
-    [switch <p >o
-        o < p
+    [switch <in >out
+        out < in
     ]
     [matrix4x4]
     `
@@ -136,8 +149,8 @@ const Editor = forwardRef(({ callback }, ref) => {
                 name: instanceName,
                 circuit: circuitType,
                 circuitBody: declaredPins.circuitBody, 
-                inputs: declaredPins.inputs.map((pin) => ({ name: pin, value: null })),
-                outputs: declaredPins.outputs.map((pin) => ({ name: pin })),
+                inputs: declaredPins.inputs.map((pin) => ({ name: pin, value: null, voltage: 'L' })),
+                outputs: declaredPins.outputs.map((pin) => ({ name: pin, value: null, voltage: 'L' })),
             };
     
             instances.set(instanceName, instance);
@@ -161,11 +174,13 @@ const Editor = forwardRef(({ callback }, ref) => {
                         pin.voltage = "L";
                     } else {
                         pin.value = value;
-                        pin.voltage = "L";
+                        pin.voltage = value;
                         pin.type = "literal";
                     }
                 }
             }
+
+            
         }
     
         
@@ -209,9 +224,9 @@ const Editor = forwardRef(({ callback }, ref) => {
             let expression = match[2].trim(); 
     
             let parsedExpr = parseLogicExpression(expression);
-    
+            
             try {
-                evaluators[outputPin] = new Function("pins", `return (${parsedExpr});`);
+                evaluators[outputPin] = new Function("pins", `return (${parsedExpr}) ? 'H' : 'L';`);
             } catch (error) {
                 console.error(`Error creating evaluator for ${outputPin}:`, error);
             }
@@ -221,106 +236,66 @@ const Editor = forwardRef(({ callback }, ref) => {
     };
 
     const evaluate = (tree) => {
-        let pinValues = new Map(); // Stores pin states during evaluation
-        let connectionMap = new Map(); // Stores input-output mappings
-    
-        // First pass: Initialize known values (literals & outputs)
+        let pinValues = {};
+        let connections = {};
+        let change = true;
+
+        //Connect up pins
         tree.forEach(instance => {
             instance.inputs.forEach(pin => {
-                if (pin.type === "literal") {
-                    pinValues.set(`${instance.name}-${pin.name}`, pin.value === "H");
+                pinValues[`${instance.name}-${pin.name}`] = pin.voltage;
+
+                if(pin.type === "connection"){
+                    connections[`${instance.name}-${pin.name}`] = pin.value;
                 }
             });
-    
-            // Store connections between input and output pins
-            instance.outputs.forEach(outputPin => {
-                let outputKey = `${instance.name}-${outputPin.name}`;
-                pinValues.set(outputKey, outputPin.voltage === "H");
-    
-                instance.inputs.forEach(inputPin => {
-                    if (inputPin.type === "connection") {
-                        const [srcInstance, srcPin] = inputPin.value.split("-");
-                        let srcKey = `${srcInstance}-${srcPin}`;
-    
-                        if (!connectionMap.has(srcKey)) {
-                            connectionMap.set(srcKey, []);
-                        }
-                        connectionMap.get(srcKey).push(outputKey);
-                    }
-                });
+            instance.outputs.forEach(pin => {
+                pinValues[`${instance.name}-${pin.name}`] = 'L';
             });
         });
-    
-        let changed = true;
-        while (changed) {
-            changed = false;
-    
+
+        //Evaluate
+        let cycles = 0;
+        while(change){
+            change = false;
             tree.forEach(instance => {
-                let evaluators = extractEvaluators(instance.circuitBody);
-    
-                instance.outputs.forEach(outputPin => {
-                    let outputKey = `${instance.name}-${outputPin.name}`;
-                    let inputs = {}; 
-    
-                    instance.inputs.forEach(pin => {
-                        let inputKey = `${instance.name}-${pin.name}`;
-    
-                        if (pin.type === "connection") {
-                            const [srcInstance, srcPin] = pin.value.split("-");
-                            let srcKey = `${srcInstance}-${srcPin}`;
-                            inputs[pin.name] = pinValues.get(srcKey) ?? false;
-                        } else {
-                            inputs[pin.name] = pinValues.get(inputKey) ?? false;
-                        }
-                    });
-    
-                    // Evaluate logic expression if present
-                    if (evaluators[outputPin.name]) {
-                        let newValue = evaluators[outputPin.name](inputs);
-                        if (pinValues.get(outputKey) !== newValue) {
-                            pinValues.set(outputKey, newValue);
-                            outputPin.voltage = newValue ? 'H' : 'L';
-                            changed = true;
-                        }
+                const evaluators = extractEvaluators(instance.circuitBody);
+                instance.outputs.forEach(pin => {
+                    let evalPin = evaluators[pin.name];
+                    let pins = instance.inputs.reduce((acc, pin) => ({ ...acc, [pin.name]: pin.voltage === "H"}), {});
+                    let voltage = evalPin(pins);
+                    
+                    if(pinValues[`${instance.name}-${pin.name}`] !== voltage || pin.voltage !== voltage){
+                        change = true;
+                        console.log(`${instance.name}-${pin.name} ${pin.voltage} => ${voltage}`)    
+                        pin.voltage = voltage;
+                        pinValues[`${instance.name}-${pin.name}`] = voltage;
+                    }
+                });
+
+                instance.inputs.forEach(pin => {
+                    let voltage = pinValues[connections[`${instance.name}-${pin.name}`]];
+                    if(pin.voltage !== voltage && voltage){
+                        change = true;
+                        console.log(`${instance.name}-${pin.name} ${pin.voltage} => ${voltage}`)    
+                        pin.voltage = voltage;
+                        pinValues[`${instance.name}-${pin.name}`] = voltage;
                     }
                 });
             });
-    
-            // ✅ Propagate values through direct connections
-            pinValues.forEach((value, pinKey) => {
-                if (connectionMap.has(pinKey)) {
-                    connectionMap.get(pinKey).forEach(destKey => {
-                        if (pinValues.get(destKey) !== value) {
-                            pinValues.set(destKey, value);
-                            changed = true;
-                        }
-                    });
-                }
-            });
+            cycles++;
         }
-    
-        // Final pass: Apply resolved values to actual tree
+        
+        console.log(`Propagated in ${cycles} cycles!`)
+
+        //Propagate value
         tree.forEach(instance => {
-            instance.outputs.forEach(outputPin => {
-                let pinKey = `${instance.name}-${outputPin.name}`;
-                if (pinValues.has(pinKey)) {
-                    outputPin.voltage = pinValues.get(pinKey) ? 'H' : 'L';
-                }
-            });
-    
-            instance.inputs.forEach(inputPin => {
-                if (inputPin.type === "connection") {
-                    const [srcInstance, srcPin] = inputPin.value.split("-");
-                    let srcKey = `${srcInstance}-${srcPin}`;
-                    if (pinValues.has(srcKey)) {
-                        inputPin.voltage = pinValues.get(srcKey) ? 'H' : 'L';
-                    }
+            instance.inputs.forEach(pin => {
+                if(connections[`${instance.name}-${pin.name}`]){
+                    pin.voltage = pinValues[connections[`${instance.name}-${pin.name}`]]
                 }
             });
         });
-    
-        console.log("Evaluation Complete:", tree);
-        return pinValues;
     };
     
     
