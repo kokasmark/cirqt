@@ -19,6 +19,12 @@ function Editor({callback}) {
     
     m.clk < 500hz
     d.clk < 500hz
+
+    d.d1 < m.o1
+    d.d2 < m.o2
+    d.d3 < m.o3
+
+    m.d1 < 5v
 ]`);
 
     const [tree, setTree] = useState([]);
@@ -90,7 +96,7 @@ function Editor({callback}) {
         const circuitPattern = /\[(\w+)[\s\S]*?\]/g; // Matches circuit declarations
         const instancePattern = /^\s*(\w+)\s+(\w+)/gm; // Matches instances inside board
         const pinPattern = /([<>])(\w+)/g; // Matches input and output pins
-        const assignmentPattern = /(\w+)\.(\w+)\s*<\s*([\w\d]+)/g; // Matches pin assignments
+        const assignmentPattern = /(\w+)\.(\w+)\s*<\s*([\w.]+)/g; // Matches pin assignments
     
         let declaredCircuits = new Map();
         let tree = [];
@@ -143,18 +149,27 @@ function Editor({callback}) {
             instances.set(instanceName, instance);
         }
     
-        // Step 4: Match pin assignments
         for (let match of boardText.matchAll(assignmentPattern)) {
             let instanceName = match[1]; // e.g., "m"
             let pinName = match[2]; // e.g., "clk"
-            let value = match[3]; // e.g., "500hz"
-    
+            let value = match[3]; // e.g., "500hz" or "d.o1"
+        
             if (instances.has(instanceName)) {
                 let instance = instances.get(instanceName);
-    
-                let inputPin = instance.inputs.find((p) => p.name === pinName);
-                if (inputPin) {
-                    inputPin.value = value;
+        
+                let pin = instance.inputs.find((p) => p.name === pinName);
+                if (pin) {
+                    // Check if the value is a pin connection (contains ".")
+                    if (value.includes(".")) {
+                        let [connectedInstance, connectedPin] = value.split(".");
+                        pin.value = `${connectedInstance}-${connectedPin}`;
+                        pin.type = "connection";
+                        pin.voltage = Math.random() > 0.5 ? "H" : "L"
+                    } else {
+                        pin.value = value;
+                        pin.voltage = Math.random() > 0.5 ? "H" : "L"
+                        pin.type = "literal";
+                    }
                 }
             }
         }
@@ -168,6 +183,14 @@ function Editor({callback}) {
         callback(tree);
     };
     
+    const evaulate = (tree) => {
+        //Feed tree
+        //Step down branches
+        //Evaulate top definitions
+        //Set pin inputs to H or L based on the underlying mechanisms
+
+
+    }
     useEffect(()=>{
         dismantle(code);
     }, [])

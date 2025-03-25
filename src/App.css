@@ -35,7 +35,8 @@
 }
 
 .actions{
-  width: 95%;
+  width: calc(95% - 40px);
+  padding: 0px 20px;
   height: 30px;
   display: flex;
   align-items: center;
@@ -178,6 +179,7 @@ textarea {
   justify-content: center;
   align-items: center;
   border-radius: 5px;
+  cursor: grabbing;
 }
 
 .circuit-container .pins{
