@@ -24,7 +24,7 @@ function Editor({callback}) {
     d.d2 < m.o2
     d.d3 < m.o3
 
-    m.d1 < 5v
+    m.d1 < H
 ]`);
 
     const [tree, setTree] = useState([]);
@@ -92,48 +92,47 @@ function Editor({callback}) {
     };
 
     const dismantle = (text) => {
-        const boardPattern = /\[board\s+([\s\S]*?)\]/g; // Extracts the board content
-        const circuitPattern = /\[(\w+)[\s\S]*?\]/g; // Matches circuit declarations
-        const instancePattern = /^\s*(\w+)\s+(\w+)/gm; // Matches instances inside board
-        const pinPattern = /([<>])(\w+)/g; // Matches input and output pins
-        const assignmentPattern = /(\w+)\.(\w+)\s*<\s*([\w.]+)/g; // Matches pin assignments
+        const boardPattern = /\[board\s+([\s\S]*?)\]/g; 
+        const circuitPattern = /\[(\w+)[\s\S]*?\]/g; 
+        const instancePattern = /^\s*(\w+)\s+(\w+)/gm; 
+        const pinPattern = /([<>])(\w+)/g; 
+        const assignmentPattern = /(\w+)\.(\w+)\s*<\s*([\w.]+)/g; 
     
         let declaredCircuits = new Map();
         let tree = [];
     
-        // Step 1: Extract circuit declarations
+        
         for (let match of text.matchAll(circuitPattern)) {
-            let circuitName = match[1]; // Circuit name (e.g., "multiplexer")
-            let circuitBody = match[0]; // Full content of the circuit block
-    
-            let pinMatches = [...circuitBody.matchAll(pinPattern)]; // Extract <d1, >o1, etc.
+            let circuitName = match[1]; 
+            let circuitBody = match[0]; 
+        
+            let lines = circuitBody.split("\n").slice(1); 
+            let logicBody = lines.join("\n").trim(); 
+        
+            let pinMatches = [...circuitBody.matchAll(pinPattern)]; 
             let inputs = pinMatches.filter(p => p[1] === "<").map(p => p[2]);
             let outputs = pinMatches.filter(p => p[1] === ">").map(p => p[2]);
-    
-            declaredCircuits.set(circuitName, { inputs, outputs });
+        
+            declaredCircuits.set(circuitName, { inputs, outputs, circuitBody: logicBody });
         }
+
     
-        console.log("Declared Circuits:", declaredCircuits);
-    
-        // Step 2: Extract board contents
+        
         let boardMatch = boardPattern.exec(text);
         if (!boardMatch) {
-            console.log("No board found!");
             return;
         }
     
-        let boardText = boardMatch[1]; // Get the contents inside [board ...] block
-        console.log("Board Content:", boardText);
+        let boardText = boardMatch[1]; 
     
-        // Step 3: Match instances inside board
+        
         let instances = new Map();
     
         for (let match of boardText.matchAll(instancePattern)) {
-            let circuitType = match[1]; // e.g., "multiplexer"
-            let instanceName = match[2]; // e.g., "m"
+            let circuitType = match[1]; 
+            let instanceName = match[2]; 
     
             if (!declaredCircuits.has(circuitType)) {
-                console.log(`Circuit type '${circuitType}' not found in declarations.`);
                 continue;
             }
     
@@ -142,6 +141,7 @@ function Editor({callback}) {
             let instance = {
                 name: instanceName,
                 circuit: circuitType,
+                circuitBody: declaredPins.circuitBody, 
                 inputs: declaredPins.inputs.map((pin) => ({ name: pin, value: null })),
                 outputs: declaredPins.outputs.map((pin) => ({ name: pin })),
             };
@@ -150,31 +150,31 @@ function Editor({callback}) {
         }
     
         for (let match of boardText.matchAll(assignmentPattern)) {
-            let instanceName = match[1]; // e.g., "m"
-            let pinName = match[2]; // e.g., "clk"
-            let value = match[3]; // e.g., "500hz" or "d.o1"
+            let instanceName = match[1]; 
+            let pinName = match[2]; 
+            let value = match[3]; 
         
             if (instances.has(instanceName)) {
                 let instance = instances.get(instanceName);
         
                 let pin = instance.inputs.find((p) => p.name === pinName);
                 if (pin) {
-                    // Check if the value is a pin connection (contains ".")
+                    
                     if (value.includes(".")) {
                         let [connectedInstance, connectedPin] = value.split(".");
                         pin.value = `${connectedInstance}-${connectedPin}`;
                         pin.type = "connection";
-                        pin.voltage = Math.random() > 0.5 ? "H" : "L"
+                        pin.voltage = "L";
                     } else {
                         pin.value = value;
-                        pin.voltage = Math.random() > 0.5 ? "H" : "L"
+                        pin.voltage = "L";
                         pin.type = "literal";
                     }
                 }
             }
         }
     
-        // Convert Map to array
+        
         tree = Array.from(instances.values());
     
         console.log("Final Tree:", tree);
@@ -183,14 +183,114 @@ function Editor({callback}) {
         callback(tree);
     };
     
-    const evaulate = (tree) => {
-        //Feed tree
-        //Step down branches
-        //Evaulate top definitions
-        //Set pin inputs to H or L based on the underlying mechanisms
+    
+    const parseLogicExpression = (expr) => {
+        
+        expr = expr.replace(/\bH\b/g, "true");
+        expr = expr.replace(/\bL\b/g, "false");
+    
+        
+        expr = expr.replace(/\s*&\s*/g, " && ");    
+        expr = expr.replace(/\s*x\|\s*/g, " !== "); 
+        expr = expr.replace(/\s*!&\s*/g, " NAND "); 
+    
+        
+        expr = expr.replace(/\b([a-zA-Z_]\w*)\b/g, (match) => {
+            if (match === "true" || match === "false") return match; 
+            return `pins.${match}`;
+        });
+    
+        
+        expr = expr.replace(/pins\.(\w+)\s*NAND\s*pins\.(\w+)/g, "! (pins.$1 && pins.$2)");
+        return expr;
+    };
+    
+    const extractEvaluators = (circuitBody) => {
+        const evalPattern = /^\s*(\w+)\s*<\s*([\w\s&!|]+)$/gm; 
+        let evaluators = {};
+    
+        for (let match of circuitBody.matchAll(evalPattern)) {
+            let outputPin = match[1].trim(); 
+            let expression = match[2].trim(); 
+    
+            let parsedExpr = parseLogicExpression(expression);
+    
+            try {
+                evaluators[outputPin] = new Function("pins", `return (${parsedExpr});`);
+            } catch (error) {
+                console.error(`Error creating evaluator for ${outputPin}:`, error);
+            }
+        }
+    
+        return evaluators;
+    };
 
+    const evaluate = (tree) => {
+    let pinValues = new Map(); 
 
+    
+    tree.forEach(instance => {
+        instance.inputs.forEach(pin => {
+            if (pin.type === "literal") {
+                pinValues.set(`${instance.name}-${pin.name}`, pin.value === "H");
+            }
+        });
+    });
+
+    let changed = true;
+    while (changed) {
+        changed = false;
+
+        
+        tree.forEach(instance => {
+            let evaluators = extractEvaluators(instance.circuitBody);
+
+            instance.outputs.forEach(outputPin => {
+                let pinKey = `${instance.name}-${outputPin.name}`;
+
+                if (!pinValues.has(pinKey)) { 
+                    try {
+                        let inputs = {};
+                        instance.inputs.forEach(pin => {
+                            let inputKey = `${instance.name}-${pin.name}`;
+                            inputs[pin.name] = pinValues.get(inputKey) ?? false; 
+                        });
+
+                        if (evaluators[outputPin.name]) {
+                            let newValue = evaluators[outputPin.name](inputs);
+                            pinValues.set(pinKey, newValue);
+                            changed = true;
+
+                            
+                            outputPin.voltage = newValue ? 'H' : 'L';
+                        }
+                    } catch (err) {
+                        console.error(`Error evaluating ${pinKey}:`, err);
+                    }
+                }
+            });
+        });
     }
+
+    
+    tree.forEach(instance => {
+        instance.outputs.forEach(outputPin => {
+            let pinKey = `${instance.name}-${outputPin.name}`;
+            if (pinValues.has(pinKey)) {
+                outputPin.voltage = pinValues.get(pinKey) ? 'H' : 'L';
+            }
+        });
+    });
+
+    console.log("Updated Tree:", tree);
+    return pinValues;
+};
+
+useEffect(() => {
+    evaluate(tree);
+}, [tree]);
+
+
     useEffect(()=>{
         dismantle(code);
     }, [])
