@@ -3,29 +3,31 @@ import "./App.css";
 
 const Editor = forwardRef(({ callback }, ref) => {
     const [code, setCode] = useState(`
-[a <i1 <i2 >o1
+[a <i1 <i2 >o1 >o2
     o1 < i1 & i2
-]
-[b <i1 <i2 >o1
-    o1 < i1 | i2
+    o2 < i1 x| i2
 ]
 [board <H <_ 
     a aa
-    b bb
-    led l
+    rled l
+    gled g
     switch s    
     
     aa.i1 < H
     aa.i2 < s.out
-
-    bb.i1 < aa.o1
-    bb.i2 < L
-
-    l.in < bb.o1
+    
+    l.in < aa.o1
+    g.in < aa.o2
 ]`);
 
     const circuits = `
-    [led <in >out
+    [rled <in >out
+        out < in
+    ]
+    [gled <in >out
+        out < in
+    ]
+    [bled <in >out
         out < in
     ]
     [switch <in >out
@@ -216,7 +218,7 @@ const Editor = forwardRef(({ callback }, ref) => {
     };
     
     const extractEvaluators = (circuitBody) => {
-        const evalPattern = /^\s*(\w+)\s*<\s*([\w\s&!|]+)$/gm; 
+        const evalPattern = /^\s*(\w+)\s*<\s*(.+)$/gm;
         let evaluators = {};
     
         for (let match of circuitBody.matchAll(evalPattern)) {
@@ -224,6 +226,7 @@ const Editor = forwardRef(({ callback }, ref) => {
             let expression = match[2].trim(); 
     
             let parsedExpr = parseLogicExpression(expression);
+            console.log(parsedExpr)
             
             try {
                 evaluators[outputPin] = new Function("pins", `return (${parsedExpr}) ? 'H' : 'L';`);

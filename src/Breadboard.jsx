@@ -41,7 +41,7 @@ function Breadboard({tree, update}) {
 
   const [connections,setConnections] = useState(getConnections(tree));
 
-  const predefinedCircuits = ["led", "switch", "matrix4x4"]
+  const predefinedCircuits = ["rled", "gled", "bled", "switch", "matrix4x4"]
 
   useEffect(()=>{
     console.log('Wiring...')
@@ -52,7 +52,9 @@ return (
   <div className="breadboard">
       {tree.map((circuit, index) => (
           <span>
-            {circuit.circuit === "led" && <Led circuit={circuit} index={index} updateXarrow={updateXarrow}/>}
+            {circuit.circuit === "rled" && <Led circuit={circuit} index={index} updateXarrow={updateXarrow} color={'#FF7E7E'}/>}
+            {circuit.circuit === "gled" && <Led circuit={circuit} index={index} updateXarrow={updateXarrow} color={'#DDF58B'}/>}
+            {circuit.circuit === "bled" && <Led circuit={circuit} index={index} updateXarrow={updateXarrow} color={'#7F95EB'}/>}
             {circuit.circuit === "switch" && <Switch circuit={circuit} index={index} updateXarrow={updateXarrow} update={update}/>}
             {!predefinedCircuits.includes(circuit.circuit) && <Circuit circuit={circuit} index={index} updateXarrow={updateXarrow}/>}
           </span>
