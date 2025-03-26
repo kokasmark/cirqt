@@ -4,9 +4,9 @@ import { Bounce, ToastContainer, toast } from 'react-toastify';
 
 const Editor = forwardRef(({ callback }, ref) => {
     const [code, setCode] = useState(`
-[a <i1 <i2 >o1 >o2
-    o1 < i1 & i2
-    o2 < i1 x| i2
+[a <clk >o1 >o2
+    o1 < clk
+    o2 < ! clk
 ]
 [board <H <_ 
     a aa
@@ -15,8 +15,7 @@ const Editor = forwardRef(({ callback }, ref) => {
     clock c
     
     c.hz < 1hz
-    aa.i1 < H
-    aa.i2 < c.out
+    aa.clk < c.out
     
     l.in < aa.o1
     g.in < aa.o2
@@ -36,12 +35,33 @@ const Editor = forwardRef(({ callback }, ref) => {
         out < in
     ]
     [matrix4x4]
-    [d_flip_flop <D <CLK <P >Q >QN
-        Q < (CLK & D) | (!CLK & Q)
-        QN < !Q
-    ]
     [clock <hz >out
         
+    ]
+    [and <a <b >out
+        out < a & b
+    ]
+    [nand <a <b >out
+        out < a !& b
+    ]
+    [or <a <b >out
+        out < a | b
+    ]
+    [nor <a <b >out
+        out < a !| b
+    ]
+    [xor <a <b >out
+        out < a x| b
+    ]
+    [xnor <a <b >out
+        out < a x!| b
+    ]
+    [not <in >out
+        out < ! in
+    ]
+    [sr_latch <S <R >Q >QN
+        Q < ! (R | QN)
+        QN < ! (S | Q)
     ]
     `
 
@@ -59,6 +79,29 @@ const Editor = forwardRef(({ callback }, ref) => {
         "x!|", //XNor
     ];
 
+    const error = (msg) => {
+        toast.error(msg, {
+            position: "bottom-center",
+            autoClose: 2000,
+            hideProgressBar: false,
+            closeOnClick: false,
+            pauseOnHover: true,
+            draggable: true,
+            progress: undefined,
+            theme: "dark",
+            transition: Bounce,
+            });
+    }
+
+    const help = {
+        "keyword_and": 'AND Gate on board, <a <b >out',
+        "keyword_or": 'OR Gate on board, <a <b >out',
+        "keyword_not": 'NOT Gate on board, <in >out',
+        "keyword_rled": 'A red led, <in >out',
+        "keyword_gled": 'A green led, <in >out',
+        "keyword_bled": 'A blue led, <in >out',
+        "keyword_clock": 'A clock that oscillates based on the hz input., <hz >out',
+    }
 
     const handleKeyDown = (event) => {
         if (event.key === "Tab") {
@@ -91,13 +134,13 @@ const Editor = forwardRef(({ callback }, ref) => {
 
         return parts.map((part, index) => {
             if (circuitNames.includes(part)) {
-                return <span key={index} className="keyword" data-type="Circuit" data-desc="An instace can be created.">{part}</span>;
+                return <span key={index} className="keyword" data-type="Circuit" data-desc={help[`keyword_${part}`]}>{part}</span>;
             }
             if (gates.some((gate) => validGateCombinations.includes(part))) {
             return <span key={index} className="gate" data-type="Gate" data-desc="A logical gate.">{part}</span>;
             }
             if (operators.includes(part)) {
-            return <span key={index} className="operator" data-type="Operator" data-desc="...">{part}</span>;
+                return <span key={index} className="operator" data-type="Operator" data-desc="...">{part}</span>;
             }
             if (consts.includes(part)) {
             return <span key={index} className="type" data-type="Constant" data-desc="A constant value.">{part}</span>;
@@ -139,6 +182,7 @@ const Editor = forwardRef(({ callback }, ref) => {
         
         let boardMatch = boardPattern.exec(text);
         if (!boardMatch) {
+            error(`Board was not declared!`)
             return;
         }
     
@@ -152,6 +196,7 @@ const Editor = forwardRef(({ callback }, ref) => {
             let instanceName = match[2]; 
     
             if (!declaredCircuits.has(circuitType)) {
+                error(`No circuit can be find of type ${circuitType}`)
                 continue;
             }
     
@@ -253,18 +298,7 @@ const Editor = forwardRef(({ callback }, ref) => {
             try {
                 evaluators[outputPin] = new Function("pins", `return (${parsedExpr}) ? 'H' : 'L';`);
             } catch (error) {
-                console.error(`Error creating evaluator for ${outputPin}:`, error);
-                toast.error(`Cant evaluate ${outputPin}`, {
-                    position: "bottom-center",
-                    autoClose: 2000,
-                    hideProgressBar: false,
-                    closeOnClick: false,
-                    pauseOnHover: true,
-                    draggable: true,
-                    progress: undefined,
-                    theme: "dark",
-                    transition: Bounce,
-                    });
+                error(`Cannot evaluate ${outputPin}!`)
             }
         }
     
@@ -293,6 +327,10 @@ const Editor = forwardRef(({ callback }, ref) => {
         //Evaluate
         let cycles = 0;
         while(change){
+            if(cycles > 100){
+                error("Evaluation timed out!")
+                break;
+            }
             change = false;
             tree.forEach(instance => {
                 const evaluators = extractEvaluators(instance.circuitBody);
