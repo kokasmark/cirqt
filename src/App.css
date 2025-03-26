@@ -8,6 +8,7 @@
   height: 100vh;
 
   font-family: monospace;
+  overflow-y: hidden;
 }
 
 .app{
@@ -148,7 +149,7 @@ textarea {
 .type { color: violet; }
 .variable { color: lightblue; }
 .voltage { color: violet; }
-.gate{color: lightgreen}
+.gate{color: lightgreen;}
 
 
 .breadboard {

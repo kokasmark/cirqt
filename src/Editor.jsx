@@ -1,5 +1,6 @@
 import { useEffect, useState, forwardRef, useImperativeHandle } from "react";
 import "./App.css";
+import { Bounce, ToastContainer, toast } from 'react-toastify';
 
 const Editor = forwardRef(({ callback }, ref) => {
     const [code, setCode] = useState(`
@@ -11,10 +12,11 @@ const Editor = forwardRef(({ callback }, ref) => {
     a aa
     rled l
     gled g
-    switch s    
+    clock c
     
+    c.hz < 1hz
     aa.i1 < H
-    aa.i2 < s.out
+    aa.i2 < c.out
     
     l.in < aa.o1
     g.in < aa.o2
@@ -34,6 +36,13 @@ const Editor = forwardRef(({ callback }, ref) => {
         out < in
     ]
     [matrix4x4]
+    [d_flip_flop <D <CLK <P >Q >QN
+        Q < (CLK & D) | (!CLK & Q)
+        QN < !Q
+    ]
+    [clock <hz >out
+        
+    ]
     `
 
     const [tree, setTree] = useState([]);
@@ -41,6 +50,15 @@ const Editor = forwardRef(({ callback }, ref) => {
     const operators = ["<", ">", "?", ":", "[", "]"];
     const gates = ["&", "|", "!", "x"];
     const consts = ["_","H","L"];
+
+    const validGateCombinations = [
+        "&", "|", "!", //Basic
+        "!&", //Nand
+        "!|",//Nor
+        "x|", //Xor
+        "x!|", //XNor
+    ];
+
 
     const handleKeyDown = (event) => {
         if (event.key === "Tab") {
@@ -62,14 +80,6 @@ const Editor = forwardRef(({ callback }, ref) => {
         const circuitNamePattern = /\[\s*(\w+)/g;
         const hertzPattern = /\b(\d+(\.\d*)?)hz\b/g;
 
-        const validGateCombinations = [
-            "&", "|", "!", //Basic
-            "!&", //Nand
-            "!|",//Nor
-            "x|", //Xor
-            "x!|", //XNor
-        ];
-
         let circuitNames = [];
         let match;
 
@@ -81,7 +91,7 @@ const Editor = forwardRef(({ callback }, ref) => {
 
         return parts.map((part, index) => {
             if (circuitNames.includes(part)) {
-            return <span key={index} className="keyword" data-type="Circuit" data-desc="An instace can be created.">{part}</span>;
+                return <span key={index} className="keyword" data-type="Circuit" data-desc="An instace can be created.">{part}</span>;
             }
             if (gates.some((gate) => validGateCombinations.includes(part))) {
             return <span key={index} className="gate" data-type="Gate" data-desc="A logical gate.">{part}</span>;
@@ -194,28 +204,41 @@ const Editor = forwardRef(({ callback }, ref) => {
         callback(tree);
     };
     
-    
     const parseLogicExpression = (expr) => {
+        // Step 1: Replace H and L with boolean values
         expr = expr.replace(/\bH\b/g, "true");
         expr = expr.replace(/\bL\b/g, "false");
     
-        
-        expr = expr.replace(/\s*&\s*/g, " && ");    
-        expr = expr.replace(/\s*x\|\s*/g, " !== "); 
-        expr = expr.replace(/\s*!&\s*/g, " NAND "); 
-        expr = expr.replace(/\s*!\|\s*/g, " NOR ");  
+        // Step 2: Replace logical gates with their corresponding JavaScript operators
+        expr = expr.replace(/\s*x!\|\s*/g, " === ");  // XNOR
+        expr = expr.replace(/\s*x\|\s*/g, " !== ");   // XOR
+        expr = expr.replace(/\s*!&\s*/g, " !( ");     // NAND (start)
+        expr = expr.replace(/\s*!\|\s*/g, " !( ");    // NOR (start)
+        expr = expr.replace(/\s*&\s*/g, " && ");      // AND
+        expr = expr.replace(/\s*\|\s*/g, " || ");     // OR
+        expr = expr.replace(/\s*!\s*/g, " !");        // NOT
     
-        
+        // Step 3: Replace pin names with `pins.` notation (after gate replacement)
         expr = expr.replace(/\b([a-zA-Z_]\w*)\b/g, (match) => {
-            if (match === "true" || match === "false") return match; 
-            return `pins.${match}`;
+            if (["XNOR", "XOR", "NAND", "NOR", "AND", "OR", "NOT", "true", "false"].includes(match)) return match;
+            return `pins.${match}`;  // Only replace pin names with `pins.` notation
         });
     
-        
-        expr = expr.replace(/pins\.(\w+)\s*NAND\s*pins\.(\w+)/g, "!(pins.$1 && pins.$2)");
-        expr = expr.replace(/pins\.(\w+)\s*NOR\s*pins\.(\w+)/g, "!(pins.$1 || pins.$2)");
+        // Step 4: Close NAND and NOR expressions properly
+        expr = expr.replace(/!\(\s*([\w\s&|!]+)\s*\)/g, "!( $1 )");  // Fix opening and closing for NAND/NOR
+    
+        // Step 5: Ensure parentheses are properly placed for composite expressions
+        expr = expr.replace(/\(([\w\s&|!()]+)\)/g, "($1)");  // Wrap inside parentheses
+    
+        // Step 6: Replace gates with JavaScript equivalent operators
+        expr = expr.replace(/pins\.(\w+)\s*AND\s*pins\.(\w+)/g, "(pins.$1 && pins.$2)");
+        expr = expr.replace(/pins\.(\w+)\s*OR\s*pins\.(\w+)/g, "(pins.$1 || pins.$2)");
+        expr = expr.replace(/pins\.(\w+)\s*NOT\s*pins\.(\w+)/g, "!(pins.$1 && pins.$2)");
+    
         return expr;
     };
+    
+    
     
     const extractEvaluators = (circuitBody) => {
         const evalPattern = /^\s*(\w+)\s*<\s*(.+)$/gm;
@@ -226,12 +249,22 @@ const Editor = forwardRef(({ callback }, ref) => {
             let expression = match[2].trim(); 
     
             let parsedExpr = parseLogicExpression(expression);
-            console.log(parsedExpr)
             
             try {
                 evaluators[outputPin] = new Function("pins", `return (${parsedExpr}) ? 'H' : 'L';`);
             } catch (error) {
                 console.error(`Error creating evaluator for ${outputPin}:`, error);
+                toast.error(`Cant evaluate ${outputPin}`, {
+                    position: "bottom-center",
+                    autoClose: 2000,
+                    hideProgressBar: false,
+                    closeOnClick: false,
+                    pauseOnHover: true,
+                    draggable: true,
+                    progress: undefined,
+                    theme: "dark",
+                    transition: Bounce,
+                    });
             }
         }
     
@@ -253,7 +286,7 @@ const Editor = forwardRef(({ callback }, ref) => {
                 }
             });
             instance.outputs.forEach(pin => {
-                pinValues[`${instance.name}-${pin.name}`] = 'L';
+                pinValues[`${instance.name}-${pin.name}`] = pin.voltage;
             });
         });
 
@@ -266,14 +299,19 @@ const Editor = forwardRef(({ callback }, ref) => {
                 instance.outputs.forEach(pin => {
                     let evalPin = evaluators[pin.name];
                     let pins = instance.inputs.reduce((acc, pin) => ({ ...acc, [pin.name]: pin.voltage === "H"}), {});
-                    let voltage = evalPin(pins);
-                    
-                    if(pinValues[`${instance.name}-${pin.name}`] !== voltage || pin.voltage !== voltage){
-                        change = true;
-                        console.log(`${instance.name}-${pin.name} ${pin.voltage} => ${voltage}`)    
-                        pin.voltage = voltage;
-                        pinValues[`${instance.name}-${pin.name}`] = voltage;
+                    try{
+                        let voltage = evalPin(pins);
+                        if(pinValues[`${instance.name}-${pin.name}`] !== voltage || pin.voltage !== voltage){
+                            change = true;
+                            console.log(`${instance.name}-${pin.name} ${pin.voltage} => ${voltage}`)    
+                            pin.voltage = voltage;
+                            pinValues[`${instance.name}-${pin.name}`] = voltage;
+                        }
+                    }catch{
+
                     }
+                    
+                    
                 });
 
                 instance.inputs.forEach(pin => {
@@ -327,6 +365,20 @@ const Editor = forwardRef(({ callback }, ref) => {
             <pre className="highlighted">
                 <code>{highlightSyntax(code)}</code>
             </pre>
+
+            <ToastContainer
+                position="bottom-center"
+                autoClose={2000}
+                hideProgressBar={false}
+                newestOnTop={false}
+                closeOnClick={false}
+                rtl={false}
+                pauseOnFocusLoss
+                draggable
+                pauseOnHover
+                theme="dark"
+                transition={Bounce}
+                />
         </div>
     );
 });

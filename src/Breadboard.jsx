@@ -5,6 +5,7 @@ import Xarrow, {useXarrow, Xwrapper} from 'react-xarrows';
 import Circuit from './Circuit';
 import Led from './Led';
 import Switch from './Switch';
+import Clock from './Clock';
 
 function Breadboard({tree, update}) {
   const updateXarrow = useXarrow();
@@ -41,7 +42,7 @@ function Breadboard({tree, update}) {
 
   const [connections,setConnections] = useState(getConnections(tree));
 
-  const predefinedCircuits = ["rled", "gled", "bled", "switch", "matrix4x4"]
+  const predefinedCircuits = ["rled", "gled", "bled", "switch", "matrix4x4", "clock"]
 
   useEffect(()=>{
     console.log('Wiring...')
@@ -56,6 +57,7 @@ return (
             {circuit.circuit === "gled" && <Led circuit={circuit} index={index} updateXarrow={updateXarrow} color={'#DDF58B'}/>}
             {circuit.circuit === "bled" && <Led circuit={circuit} index={index} updateXarrow={updateXarrow} color={'#7F95EB'}/>}
             {circuit.circuit === "switch" && <Switch circuit={circuit} index={index} updateXarrow={updateXarrow} update={update}/>}
+            {circuit.circuit === "clock" && <Clock circuit={circuit} index={index} updateXarrow={updateXarrow} update={update}/>}
             {!predefinedCircuits.includes(circuit.circuit) && <Circuit circuit={circuit} index={index} updateXarrow={updateXarrow}/>}
           </span>
       ))}
