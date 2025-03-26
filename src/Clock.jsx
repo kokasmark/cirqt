@@ -41,6 +41,7 @@ function Clock({circuit, index, updateXarrow,update}){
         nodeRef={nodeRef}
     >
         <span 
+        className="built-in-circuit"
         id={`${circuit.name}-out`}
         style={{display: 'flex',justifyContent: 'center', alignItems: 'center',width: 64, height: 64,backgroundColor: circuit.outputs[0].voltage === 'H' ? 'violet': 'grey', 
         borderRadius: '50%', filter:  circuit.outputs[0].voltage === 'H' ? `drop-shadow(0px 0px 10px violet)` : '', textAlign: 'center'}} 

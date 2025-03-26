@@ -100,7 +100,7 @@ const Editor = forwardRef(({ callback }, ref) => {
         "keyword_rled": 'A red led, <in >out',
         "keyword_gled": 'A green led, <in >out',
         "keyword_bled": 'A blue led, <in >out',
-        "keyword_clock": 'A clock that oscillates based on the hz input., <hz >out',
+        "keyword_clock": 'A clock that oscillates based on the hz input, <hz >out',
     }
 
     const handleKeyDown = (event) => {
@@ -122,6 +122,7 @@ const Editor = forwardRef(({ callback }, ref) => {
     const highlightSyntax = (text) => {
         const circuitNamePattern = /\[\s*(\w+)/g;
         const hertzPattern = /\b(\d+(\.\d*)?)hz\b/g;
+        const fieldPattern = /^\w+\.(\w+)$/;
 
         let circuitNames = [];
         let match;
@@ -146,8 +147,11 @@ const Editor = forwardRef(({ callback }, ref) => {
             return <span key={index} className="type" data-type="Constant" data-desc="A constant value.">{part}</span>;
             }
             if (hertzPattern.test(part)) {
-                return <span key={index} className="voltage" data-type="Type" data-desc="Hertz, Voltage,...">{part}</span>;
-                }
+                return <span key={index} className="voltage" data-type="Type" data-desc="...">{part}</span>;
+            }
+            if (fieldPattern.test(part)) {
+                return <span key={index} className="pin" data-type="Pin" data-desc="A circuit instance's pin.">{part}</span>;
+            }
             return part;
         });
     };

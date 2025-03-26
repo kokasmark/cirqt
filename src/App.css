@@ -16,6 +16,7 @@
   height: 100%;
 }
 
+
 .app .container{
   position: relative;
   left: 2.5%;
@@ -26,22 +27,23 @@
 }
 .app .header{
   width: 100%;
+  position: relative;
+  top: 0px;
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: center;
   height: 15%;
-  margin-bottom: 10px;
-  margin-bottom: 20px;
+  margin-bottom: 5px;
 }
 
 .actions{
-  width: calc(95% - 40px);
-  padding: 0px 20px;
+  width: calc(95% - 10px);
+  padding: 0px 5px;
   height: 30px;
   display: flex;
   align-items: center;
-  backdrop-filter: brightness(0.8);
+  backdrop-filter: brightness(0.5);
   border-radius: 10px;
   gap: 10px;
 }
@@ -59,7 +61,7 @@
   height: 100%;
   border-radius: 10px;
   margin-right: 5px;
-  backdrop-filter: brightness(0.8);
+  backdrop-filter: brightness(0.5);
 }
 
 textarea {
@@ -150,13 +152,13 @@ textarea {
 .variable { color: lightblue; }
 .voltage { color: violet; }
 .gate{color: lightgreen;}
-
+.pin{font-style: italic; color: #7F95EB;}
 
 .breadboard {
   position: relative;
   width: 50%;
   height: 100%;
-  backdrop-filter: brightness(0.8);
+  backdrop-filter: brightness(0.5);
   margin-left: 5px;
   border-radius: 10px;
 
@@ -181,6 +183,12 @@ textarea {
   align-items: center;
   border-radius: 5px;
   cursor: grabbing;
+  filter: drop-shadow(5px 2px 5px #121212);
+}
+
+.built-in-circuit{
+  cursor: grabbing;
+  filter: drop-shadow(5px 2px 5px #121212);
 }
 
 .circuit-container .pins{
@@ -189,7 +197,9 @@ textarea {
   flex-direction: row;
   align-items: center;
 }
-
+path{
+  filter: drop-shadow(2px 2px 5px #121212);
+}
 .active-wire path {
   stroke-width: 4;
   stroke-dasharray: 10 5;  /* Dash pattern */
