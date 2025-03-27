@@ -10,7 +10,8 @@ A programming language where you write code that "compiles" into circuits
 
 **Types**
 - Hertz: describes a clock. (`500hz`,`5hz`)
-- Voltage: describes a voltage given. (`5v`,`3.3v`)
+- Voltage: describes a voltage given. (`H`,`L`)
+- Bit Array: describes a sequence of Highs and Lows that will be stepped trough with each circuit step. (`b01011101`)
 
 **Constants**
 - Ground: `_`
