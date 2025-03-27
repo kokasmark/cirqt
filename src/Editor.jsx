@@ -4,21 +4,27 @@ import { Bounce, ToastContainer, toast } from 'react-toastify';
 
 const Editor = forwardRef(({ callback }, ref) => {
     const [code, setCode] = useState(`
-[a <clk >o1 >o2
-    o1 < clk
-    o2 < ! clk
+[a <clk <i1 <i2 >o1 >o2 >o3
+    o1 < (! i1) & (! i2)
+    o2 < i1 & (! i2)
+    o3 < i1 & i2
 ]
 [board <H <_ 
     a aa
     rled l
     gled g
+    bled b
     clock c
     
     c.hz < 1hz
     aa.clk < c.out
+
+    aa.i1 < b011011
+    aa.i2 < b001001
     
     l.in < aa.o1
     g.in < aa.o2
+    b.in < aa.o3
 ]`);
 
     const circuits = `
@@ -122,7 +128,8 @@ const Editor = forwardRef(({ callback }, ref) => {
     const highlightSyntax = (text) => {
         const circuitNamePattern = /\[\s*(\w+)/g;
         const hertzPattern = /\b(\d+(\.\d*)?)hz\b/g;
-        const fieldPattern = /^\w+\.(\w+)$/;
+        const variablePattern = /^\w+\.(\w+)$/;
+        const bitArray = /b(0|1)+/
 
         let circuitNames = [];
         let match;
@@ -149,8 +156,11 @@ const Editor = forwardRef(({ callback }, ref) => {
             if (hertzPattern.test(part)) {
                 return <span key={index} className="voltage" data-type="Type" data-desc="...">{part}</span>;
             }
-            if (fieldPattern.test(part)) {
-                return <span key={index} className="pin" data-type="Pin" data-desc="A circuit instance's pin.">{part}</span>;
+            if (variablePattern.test(part)) {
+                return <span key={index} className="variable" data-type="Variable" data-desc="A circuit instance's pin.">{part}</span>;
+            }
+            if (bitArray.test(part)) {
+                return <span key={index} className="voltage" data-type="Bits" data-desc="...">{part}</span>;
             }
             return part;
         });
@@ -212,6 +222,7 @@ const Editor = forwardRef(({ callback }, ref) => {
                 circuitBody: declaredPins.circuitBody, 
                 inputs: declaredPins.inputs.map((pin) => ({ name: pin, value: null, voltage: 'L' })),
                 outputs: declaredPins.outputs.map((pin) => ({ name: pin, value: null, voltage: 'L' })),
+                step: 0
             };
     
             instances.set(instanceName, instance);
@@ -233,10 +244,12 @@ const Editor = forwardRef(({ callback }, ref) => {
                         pin.value = `${connectedInstance}-${connectedPin}`;
                         pin.type = "connection";
                         pin.voltage = "L";
+                        pin.steps = 0;
                     } else {
                         pin.value = value;
                         pin.voltage = value;
                         pin.type = "literal";
+                        pin.steps = 0;
                     }
                 }
             }
@@ -270,16 +283,13 @@ const Editor = forwardRef(({ callback }, ref) => {
         // Step 3: Replace pin names with `pins.` notation (after gate replacement)
         expr = expr.replace(/\b([a-zA-Z_]\w*)\b/g, (match) => {
             if (["XNOR", "XOR", "NAND", "NOR", "AND", "OR", "NOT", "true", "false"].includes(match)) return match;
-            return `pins.${match}`;  // Only replace pin names with `pins.` notation
+            return `pins.${match}`; 
         });
-    
-        // Step 4: Close NAND and NOR expressions properly
-        expr = expr.replace(/!\(\s*([\w\s&|!]+)\s*\)/g, "!( $1 )");  // Fix opening and closing for NAND/NOR
-    
-        // Step 5: Ensure parentheses are properly placed for composite expressions
-        expr = expr.replace(/\(([\w\s&|!()]+)\)/g, "($1)");  // Wrap inside parentheses
-    
-        // Step 6: Replace gates with JavaScript equivalent operators
+
+        expr = expr.replace(/!\(\s*([\w\s&|!]+)\s*\)/g, "!( $1 )"); 
+
+        expr = expr.replace(/\(([\w\s&|!()]+)\)/g, "($1)");
+   
         expr = expr.replace(/pins\.(\w+)\s*AND\s*pins\.(\w+)/g, "(pins.$1 && pins.$2)");
         expr = expr.replace(/pins\.(\w+)\s*OR\s*pins\.(\w+)/g, "(pins.$1 || pins.$2)");
         expr = expr.replace(/pins\.(\w+)\s*NOT\s*pins\.(\w+)/g, "!(pins.$1 && pins.$2)");
@@ -298,7 +308,6 @@ const Editor = forwardRef(({ callback }, ref) => {
             let expression = match[2].trim(); 
     
             let parsedExpr = parseLogicExpression(expression);
-            
             try {
                 evaluators[outputPin] = new Function("pins", `return (${parsedExpr}) ? 'H' : 'L';`);
             } catch (error) {
@@ -313,6 +322,7 @@ const Editor = forwardRef(({ callback }, ref) => {
         let pinValues = {};
         let connections = {};
         let change = true;
+        const bitArray = /b(0|1)+/;
 
         //Connect up pins
         tree.forEach(instance => {
@@ -321,6 +331,13 @@ const Editor = forwardRef(({ callback }, ref) => {
 
                 if(pin.type === "connection"){
                     connections[`${instance.name}-${pin.name}`] = pin.value;
+                }
+                else if(bitArray.test(pin.value)){
+                    let bits = pin.value.slice(1)
+                    let voltage = bits[instance.step % bits.length] === '1' ? 'H' : 'L';
+                    pinValues[`${instance.name}-${pin.name}`] = voltage;
+                    pin.voltage = voltage;
+                    console.log(`${instance.step} => ${voltage}`)
                 }
             });
             instance.outputs.forEach(pin => {
@@ -347,6 +364,7 @@ const Editor = forwardRef(({ callback }, ref) => {
                             change = true;
                             console.log(`${instance.name}-${pin.name} ${pin.voltage} => ${voltage}`)    
                             pin.voltage = voltage;
+                            pin.step = (pin.step + 1) % 64
                             pinValues[`${instance.name}-${pin.name}`] = voltage;
                         }
                     }catch{
@@ -362,9 +380,12 @@ const Editor = forwardRef(({ callback }, ref) => {
                         change = true;
                         console.log(`${instance.name}-${pin.name} ${pin.voltage} => ${voltage}`)    
                         pin.voltage = voltage;
+                        pin.step = (pin.step + 1) % 64
                         pinValues[`${instance.name}-${pin.name}`] = voltage;
                     }
                 });
+
+                instance.step = (instance.step + 1) % 64;
             });
             cycles++;
         }
