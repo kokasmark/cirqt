@@ -2,7 +2,7 @@ import { useEffect, useState, forwardRef, useImperativeHandle } from "react";
 import "./App.css";
 import { Bounce, ToastContainer, toast } from 'react-toastify';
 
-const Editor = forwardRef(({ callback }, ref) => {
+const Editor = forwardRef(({ callback, files }, ref) => {
     const [code, setCode] = useState(`
 [a <clk <i1 <i2 >o1 >o2 >o3
     o1 < (! i1) & (! i2)
@@ -419,6 +419,14 @@ const Editor = forwardRef(({ callback }, ref) => {
 
     return (
         <div className="editor">
+            <div className="files">
+                {files.map((file, index) => (
+                    <span onClick={()=>setCode(file.code)} style={{filter: code === file.code ? '' : 'brightness(0.5)'}}>
+                        <span style={{display: 'block', width: 10, height: 10, background: 'white', borderRadius: '50%'}}></span>
+                        <p>{file.title}</p>
+                    </span>
+                ))}
+            </div>
             <textarea
                 value={code}
                 onKeyDown={handleKeyDown}
