@@ -10,6 +10,7 @@ function Circuit({circuit, index, updateXarrow}){
               onDrag={updateXarrow}
               onStop={updateXarrow}
               nodeRef={nodeRef}
+              grid={[20,20]}
           >
               <div className="circuit-container" id={`circuit-${index}`} ref={nodeRef}>
                   <span className="pins">

@@ -10,7 +10,8 @@ function App() {
 
   const [files, setFiles] = useState([
     {title: 'library', 
-    code: `[rled <in >out
+    code: `
+[rled <in >out
     out < in
 ]
 [gled <in >out

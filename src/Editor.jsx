@@ -473,8 +473,12 @@ const Editor = forwardRef(({ callback, files, setCode, setStats,addFile }, ref) 
         evaluate
     }));
 
+
+
     return (
-        <div className="editor">
+        <div className="editor"
+            onPointerEnter={()=>document.documentElement.style.setProperty('--left-side-percent','120%')}
+            onPointerLeave={()=>document.documentElement.style.setProperty('--left-side-percent','60%')}>
             <div className="files">
                 {files.map((file, index) => (
                     <span onClick={()=>setCurrent(index)} style={{filter: index === current ? '' : 'brightness(0.5)'}}>

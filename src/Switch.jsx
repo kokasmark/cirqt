@@ -11,6 +11,7 @@ function Switch({circuit, index, updateXarrow,update}){
         onDrag={updateXarrow}
         onStop={updateXarrow}
         nodeRef={nodeRef}
+        grid={[20,20]}
     >
     <span 
     className="built-in-circuit"

@@ -39,12 +39,13 @@ function Clock({circuit, index, updateXarrow,update}){
         onDrag={updateXarrow}
         onStop={updateXarrow}
         nodeRef={nodeRef}
+        grid={[20,20]}
     >
         <span 
         className="built-in-circuit"
         id={`${circuit.name}-out`}
         style={{display: 'flex',justifyContent: 'center', alignItems: 'center',width: 64, height: 64,backgroundColor: circuit.outputs[0].voltage === 'H' ? 'violet': 'grey', 
-        borderRadius: '50%', filter:  circuit.outputs[0].voltage === 'H' ? `drop-shadow(0px 0px 10px violet)` : '', textAlign: 'center'}} 
+        borderRadius: '50%', filter:  circuit.outputs[0].voltage === 'H' ? `drop-shadow(0px 0px 10px violet)` : '', textAlign: 'center',transition: 'background 1s, filter 1s'}} 
         ref={nodeRef}>{circuit.inputs[0].value}</span>
     </Draggable>)
 }

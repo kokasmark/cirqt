@@ -66,7 +66,7 @@
 }
 
 .header:hover{
-  padding: 5px 5px;
+  padding: 5px;
 }
 
 .actions{
@@ -121,7 +121,7 @@
   width: 50vw;
   height: 70vh;
   backdrop-filter: blur(20px) brightness(0.8);
-  border: 1px solid rgba(106,88,211,1);
+
   border-radius: 10px;
   padding: 0px;
   padding-top: 0px;
@@ -183,6 +183,7 @@
   backdrop-filter: brightness(0.5);
 
   transition: 0.3s;
+
 }
 .editor:hover{
   padding: 5px;
@@ -248,14 +249,14 @@ textarea {
 }
 
 .highlighted code {
-  display: block; /* Ensures correct multi-line behavior */
-  line-height: 1rem; /* Must match textarea */
+  display: block;
+  line-height: 1rem; 
 
 }
 
 .highlighted span {
-  display: inline-block; /* Prevents line height inconsistencies */
-  line-height: 1rem; /* Must match textarea */
+  display: inline-block; 
+  line-height: 1rem; 
   pointer-events: all;
   position: relative;
   cursor: pointer;
@@ -267,7 +268,7 @@ textarea {
   top: 0;
   padding: 4px;
   color: white;
-  background-color: rgba(0, 0, 0, 0.7);
+  background-color: rgba(20, 20, 20, 0.7);
   border-radius: 4px;
   z-index: 10;
 }
@@ -286,6 +287,7 @@ textarea {
   font-size: 10px;
   left: 100%; 
   margin-left: 8px;
+  margin-top: 8px;
   top: 20px;
 }
 
@@ -307,6 +309,7 @@ textarea {
   display: flex;
 
   transition: 0.3s;
+
 }
 .breadboard:hover{
   padding: 5px;
@@ -339,7 +342,7 @@ textarea {
   top: 0;
   padding: 4px;
   color: white;
-  background-color: rgba(0, 0, 0, 0.7);
+  background-color: rgba(20, 20, 20, 0.7);
   border-radius: 4px;
   z-index: 10;
 }
@@ -358,6 +361,7 @@ textarea {
   font-size: 10px;
   right: 100%; 
   margin-left: 8px;
+  margin-top: 8px;
   top: 20px;
 }
 
