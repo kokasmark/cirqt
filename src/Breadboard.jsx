@@ -1,13 +1,17 @@
 import React,{ useState,useRef, useEffect } from 'react'
 import './App.css';
-import Draggable from 'react-draggable';
 import Xarrow, {useXarrow, Xwrapper} from 'react-xarrows';
 import Circuit from './Circuit';
 import Led from './Led';
 import Switch from './Switch';
 import Clock from './Clock';
 
-function Breadboard({tree, update}) {
+import { GrPowerCycle } from "react-icons/gr";
+import { FaMicrochip } from "react-icons/fa";
+import { RiTimerLine } from "react-icons/ri";
+import { RiRestTimeLine } from "react-icons/ri";
+
+function Breadboard({tree, update, stats}) {
   const updateXarrow = useXarrow();
   const nodeRefs = useRef([]);
   if (nodeRefs.current.length !== tree.length) {
@@ -51,6 +55,25 @@ function Breadboard({tree, update}) {
 
 return (
   <div className="breadboard">
+      <div className="stats">
+        <span data-type="Cycles" data-desc="The last evaluation took this many cycles.">
+          <GrPowerCycle fontSize={20}/>
+          <p>{stats.cycles}</p>
+        </span>
+        <span data-type="Wait" data-desc="The time between evaluations.">
+          <RiRestTimeLine  fontSize={20}/>
+          <p>{stats.evaluationWait}ms</p>
+        </span>
+        <span data-type="Duration" data-desc="The last evaluation took this many milliseconds.">
+          <RiTimerLine fontSize={20}/>
+          <p>{stats.evaluationMs}ms</p>
+        </span>
+        <span data-type="Active Circuits" data-desc="The last evaluation updated this many circuits.">
+          <FaMicrochip fontSize={20}/>
+          <p>{stats.updatedInstances} / {stats.allInstances}</p>
+        </span> 
+      </div>
+
       {tree.map((circuit, index) => (
           <span>
             {circuit.circuit === "rled" && <Led circuit={circuit} index={index} updateXarrow={updateXarrow} color={'#FF7E7E'}/>}

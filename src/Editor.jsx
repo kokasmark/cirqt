@@ -2,30 +2,8 @@ import { useEffect, useState, forwardRef, useImperativeHandle } from "react";
 import "./App.css";
 import { Bounce, ToastContainer, toast } from 'react-toastify';
 
-const Editor = forwardRef(({ callback, files }, ref) => {
-    const [code, setCode] = useState(`
-[a <clk <i1 <i2 >o1 >o2 >o3
-    o1 < (! i1) & (! i2)
-    o2 < i1 & (! i2)
-    o3 < i1 & i2
-]
-[board <H <_ 
-    a aa
-    rled l
-    gled g
-    bled b
-    clock c
-    
-    c.hz < 1hz
-    aa.clk < c.out
-
-    aa.i1 < b011011
-    aa.i2 < b001001
-    
-    l.in < aa.o1
-    g.in < aa.o2
-    b.in < aa.o3
-]`);
+const Editor = forwardRef(({ callback, files, setCode, setStats,addFile }, ref) => {
+    const [current,setCurrent] = useState(0);
 
     const circuits = `
     [rled <in >out
@@ -99,6 +77,20 @@ const Editor = forwardRef(({ callback, files }, ref) => {
             });
     }
 
+    const success = (msg) => {
+        toast.success(msg, {
+            position: "bottom-center",
+            autoClose: 2000,
+            hideProgressBar: false,
+            closeOnClick: false,
+            pauseOnHover: true,
+            draggable: true,
+            progress: undefined,
+            theme: "dark",
+            transition: Bounce,
+            });
+    }
+
     const help = {
         "keyword_and": 'AND Gate on board, <a <b >out',
         "keyword_or": 'OR Gate on board, <a <b >out',
@@ -114,9 +106,9 @@ const Editor = forwardRef(({ callback, files }, ref) => {
           event.preventDefault();
 
           const cursorPosition = event.target.selectionStart;
-          const newCode = code.slice(0, cursorPosition) + "    " + code.slice(cursorPosition);
+          const newCode =  files[current].code.slice(0, cursorPosition) + "    " +  files[current].code.slice(cursorPosition);
   
-          setCode(newCode);
+          setCode(current,newCode);
 
           setTimeout(() => {
             event.target.selectionStart = cursorPosition + 4;
@@ -125,46 +117,56 @@ const Editor = forwardRef(({ callback, files }, ref) => {
         }
     };
 
+    const handleAddFile = () =>{
+        addFile('New Board')
+        success('New board created!')
+    }
+
     const highlightSyntax = (text) => {
         const circuitNamePattern = /\[\s*(\w+)/g;
         const hertzPattern = /\b(\d+(\.\d*)?)hz\b/g;
-        const variablePattern = /^\w+\.(\w+)$/;
-        const bitArray = /b(0|1)+/
-
+        const variablePattern = /\w+\.(\w+)/;
+        const bitArrayPattern = /b(0|1)+/;
+        const commentPattern = /#.*/g; 
+    
         let circuitNames = [];
         let match;
-
-        while ((match = circuitNamePattern.exec(text+circuits)) !== null) {
+    
+        while ((match = circuitNamePattern.exec(text + circuits)) !== null) {
             circuitNames.push(match[1]);
         }
-
-        const parts = text.split(/(\s+|[\[\]<>?:])/g);
-
+    
+        const parts = text.split(/(#[^\n]*|\s+|[\[\]<>?:])/g);
+    
         return parts.map((part, index) => {
+            if (commentPattern.test(part)) {
+                return <span key={index} className="comment" data-type="Comment" data-desc="Just notes...">{part}</span>;
+            }
             if (circuitNames.includes(part)) {
                 return <span key={index} className="keyword" data-type="Circuit" data-desc={help[`keyword_${part}`]}>{part}</span>;
             }
             if (gates.some((gate) => validGateCombinations.includes(part))) {
-            return <span key={index} className="gate" data-type="Gate" data-desc="A logical gate.">{part}</span>;
+                return <span key={index} className="gate" data-type="Gate" data-desc="A logical gate.">{part}</span>;
             }
             if (operators.includes(part)) {
                 return <span key={index} className="operator" data-type="Operator" data-desc="...">{part}</span>;
             }
             if (consts.includes(part)) {
-            return <span key={index} className="type" data-type="Constant" data-desc="A constant value.">{part}</span>;
+                return <span key={index} className="type" data-type="Constant" data-desc="A constant value.">{part}</span>;
             }
             if (hertzPattern.test(part)) {
-                return <span key={index} className="voltage" data-type="Type" data-desc="...">{part}</span>;
+                return <span key={index} className="type" data-type="Type" data-desc="...">{part}</span>;
             }
             if (variablePattern.test(part)) {
-                return <span key={index} className="variable" data-type="Variable" data-desc="A circuit instance's pin.">{part}</span>;
+                return <span key={index} className="pin" data-type="Pin" data-desc="A circuit instance's pin.">{part}</span>;
             }
-            if (bitArray.test(part)) {
-                return <span key={index} className="voltage" data-type="Bits" data-desc="...">{part}</span>;
+            if (bitArrayPattern.test(part)) {
+                return <span key={index} className="type" data-type="Bits" data-desc="A sequence of bits.">{part}</span>;
             }
             return part;
         });
     };
+    
 
     const dismantle = (text) => {
         const boardPattern = /\[board\s+([\s\S]*?)\]/g; 
@@ -177,6 +179,7 @@ const Editor = forwardRef(({ callback, files }, ref) => {
         let tree = [];
         
         text = text + circuits;
+        text = text.replace(/#.*/g,'')
         
         for (let match of text.matchAll(circuitPattern)) {
             let circuitName = match[1]; 
@@ -318,123 +321,158 @@ const Editor = forwardRef(({ callback, files }, ref) => {
         return evaluators;
     };
 
+    let lastEvaluationCycleCount = 0;
+    let lastEvaluationUpdates = 0;
+    let lastEvaluation = 0;
     const evaluate = (tree) => {
+        lastEvaluation = performance.now();
+
         let pinValues = {};
         let connections = {};
         let change = true;
         const bitArray = /b(0|1)+/;
 
-        //Connect up pins
-        tree.forEach(instance => {
-            instance.inputs.forEach(pin => {
-                pinValues[`${instance.name}-${pin.name}`] = pin.voltage;
-
-                if(pin.type === "connection"){
-                    connections[`${instance.name}-${pin.name}`] = pin.value;
-                }
-                else if(bitArray.test(pin.value)){
-                    let bits = pin.value.slice(1)
-                    let voltage = bits[instance.step % bits.length] === '1' ? 'H' : 'L';
-                    pinValues[`${instance.name}-${pin.name}`] = voltage;
-                    pin.voltage = voltage;
-                    console.log(`${instance.step} => ${voltage}`)
-                }
-            });
-            instance.outputs.forEach(pin => {
-                pinValues[`${instance.name}-${pin.name}`] = pin.voltage;
-            });
-        });
-
-        //Evaluate
-        let cycles = 0;
-        while(change){
-            if(cycles > 100){
-                error("Evaluation timed out!")
-                break;
-            }
-            change = false;
+        calculateStatistics(()=>{
+            //Connect up pins
             tree.forEach(instance => {
-                const evaluators = extractEvaluators(instance.circuitBody);
+                instance.inputs.forEach(pin => {
+                    pinValues[`${instance.name}-${pin.name}`] = pin.voltage;
+
+                    if(pin.type === "connection"){
+                        connections[`${instance.name}-${pin.name}`] = pin.value;
+                    }
+                    else if(bitArray.test(pin.value)){
+                        let bits = pin.value.slice(1)
+                        let voltage = bits[instance.step % bits.length] === '1' ? 'H' : 'L';
+                        pinValues[`${instance.name}-${pin.name}`] = voltage;
+                        pin.voltage = voltage;
+                        console.log(`${instance.step} => ${voltage}`)
+                    }
+                });
                 instance.outputs.forEach(pin => {
-                    let evalPin = evaluators[pin.name];
-                    let pins = instance.inputs.reduce((acc, pin) => ({ ...acc, [pin.name]: pin.voltage === "H"}), {});
-                    try{
-                        let voltage = evalPin(pins);
-                        if(pinValues[`${instance.name}-${pin.name}`] !== voltage || pin.voltage !== voltage){
+                    pinValues[`${instance.name}-${pin.name}`] = pin.voltage;
+                });
+            });
+
+            let updatedInstances = {};
+            //Evaluate
+            let cycles = 0;
+            while(change){
+                if(cycles > 100){
+                    error("Evaluation timed out!")
+                    break;
+                }
+                change = false;
+                tree.forEach(instance => {
+                    const evaluators = extractEvaluators(instance.circuitBody);
+                    instance.outputs.forEach(pin => {
+                        let evalPin = evaluators[pin.name];
+                        let pins = instance.inputs.reduce((acc, pin) => ({ ...acc, [pin.name]: pin.voltage === "H"}), {});
+                        try{
+                            let voltage = evalPin(pins);
+                            if(pinValues[`${instance.name}-${pin.name}`] !== voltage || pin.voltage !== voltage){
+                                change = true;
+                                console.log(`${instance.name}-${pin.name} ${pin.voltage} => ${voltage}`)    
+                                pin.voltage = voltage;
+                                pin.step = (pin.step + 1) % 64
+                                pinValues[`${instance.name}-${pin.name}`] = voltage;
+                                updatedInstances[instance.name] = 1;
+                                return;
+                            }
+                        }catch{
+
+                        }
+                    });
+
+                    instance.inputs.forEach(pin => {
+                        let voltage = pinValues[connections[`${instance.name}-${pin.name}`]];
+                        if(pin.voltage !== voltage && voltage){
                             change = true;
                             console.log(`${instance.name}-${pin.name} ${pin.voltage} => ${voltage}`)    
                             pin.voltage = voltage;
                             pin.step = (pin.step + 1) % 64
                             pinValues[`${instance.name}-${pin.name}`] = voltage;
+                            updatedInstances[instance.name] = 1;
+                            return;
                         }
-                    }catch{
+                    });
 
-                    }
-                    
-                    
+                    instance.step = (instance.step + 1) % 64;
                 });
+                cycles++;
+            }
+            lastEvaluationCycleCount = cycles;
+            lastEvaluationUpdates = Object.keys(updatedInstances).length;
+            console.log(`Propagated in ${cycles} cycles!`)
 
+            //Propagate value
+            tree.forEach(instance => {
                 instance.inputs.forEach(pin => {
-                    let voltage = pinValues[connections[`${instance.name}-${pin.name}`]];
-                    if(pin.voltage !== voltage && voltage){
-                        change = true;
-                        console.log(`${instance.name}-${pin.name} ${pin.voltage} => ${voltage}`)    
-                        pin.voltage = voltage;
-                        pin.step = (pin.step + 1) % 64
-                        pinValues[`${instance.name}-${pin.name}`] = voltage;
+                    if(connections[`${instance.name}-${pin.name}`]){
+                        pin.voltage = pinValues[connections[`${instance.name}-${pin.name}`]]
                     }
                 });
-
-                instance.step = (instance.step + 1) % 64;
-            });
-            cycles++;
-        }
-        
-        console.log(`Propagated in ${cycles} cycles!`)
-
-        //Propagate value
-        tree.forEach(instance => {
-            instance.inputs.forEach(pin => {
-                if(connections[`${instance.name}-${pin.name}`]){
-                    pin.voltage = pinValues[connections[`${instance.name}-${pin.name}`]]
-                }
             });
         });
     };
     
+    const calculateStatistics = (action) => {
+        const start = performance.now(); 
+        const waitedFor = start - lastEvaluation;
+
+        action();
+
+        lastEvaluation = performance.now();
+
+        const end = performance.now(); 
+        const evaluationTime = end - start;
+        
+
+        setStats({
+            cycles: lastEvaluationCycleCount,
+            updatedInstances: lastEvaluationUpdates,
+            allInstances: tree.length,
+            evaluationMs: evaluationTime.toFixed(2),
+            evaluationWait: waitedFor.toFixed(2)
+        });
+    }
     
     useEffect(() => {
-        evaluate(tree);
+        calculateStatistics(()=>evaluate(tree));
     }, [tree]);
-
+    
 
     useEffect(()=>{
-        dismantle(code);
-    }, [])
+        dismantle( files[current].code);
+    }, [current])
 
     useImperativeHandle(ref, () => ({
         evaluate
     }));
 
-
     return (
         <div className="editor">
             <div className="files">
                 {files.map((file, index) => (
-                    <span onClick={()=>setCode(file.code)} style={{filter: code === file.code ? '' : 'brightness(0.5)'}}>
+                    <span onClick={()=>setCurrent(index)} style={{filter: index === current ? '' : 'brightness(0.5)'}}>
                         <span style={{display: 'block', width: 10, height: 10, background: 'white', borderRadius: '50%'}}></span>
-                        <p>{file.title}</p>
+                        <p>{file.title}.cqt</p>
                     </span>
                 ))}
+
+                <span onClick={()=>handleAddFile()}>
+                    <span style={{display: 'flex', alignItems: 'center', justifyContent: 'center', width: 10, height: 10, border: '1px solid white', borderRadius: '50%'}}></span>
+                    <p>New Board</p>
+                </span>
             </div>
             <textarea
-                value={code}
+                value={files[current].code}
                 onKeyDown={handleKeyDown}
-                onChange={(e) => {setCode(e.target.value); dismantle(e.target.value)}}
+                onChange={(e) => {setCode(current,e.target.value); dismantle(e.target.value)}}
             />
 
             <pre className="highlighted">
-                <code>{highlightSyntax(code)}</code>
+                <code>{highlightSyntax( files[current].code)}</code>
             </pre>
 
             <ToastContainer

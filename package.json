@@ -13,6 +13,7 @@
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-draggable": "^4.4.6",
+    "react-icons": "^5.5.0",
     "react-toastify": "^11.0.5",
     "react-xarrows": "^2.0.2"
   },
