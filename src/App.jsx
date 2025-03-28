@@ -94,8 +94,17 @@ code:
         let updatedFiles = files;
         updatedFiles.push({title: `board(${files.length})`, 
             code: `
-            .include library
-            #Let your imagination run wild`})
+.include library
+
+#Your .cqt file is ready!
+
+[board <H <_
+
+# Start coding here!
+
+]
+
+`})
         setFiles(updatedFiles)
     }
 
