@@ -17,6 +17,23 @@
   overflow: hidden;
 }
 
+/* width */
+::-webkit-scrollbar {
+  width: 5px;
+}
+
+/* Track */
+::-webkit-scrollbar-track {
+  display: none;
+  background: #f1f1f1;
+}
+
+/* Handle */
+::-webkit-scrollbar-thumb {
+  background: rgba(106,88,211,1);
+  border-radius: 10px;
+}
+
 
 .app .container{
   position: relative;
@@ -56,6 +73,8 @@
   display: flex;
   align-items: center;
   gap: 10px;
+
+  overflow: hidden;
 }
 
 .action-btn{
@@ -84,6 +103,77 @@
   opacity: 1;
 }
 
+.settings-dropdown {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 100;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+}
+
+.settings {
+  position: relative;
+  display: block;
+  width: 50vw;
+  height: 70vh;
+  backdrop-filter: blur(20px) brightness(0.8);
+  border: 1px solid rgba(106,88,211,1);
+  border-radius: 10px;
+  padding: 0px;
+  padding-top: 0px;
+  box-sizing: border-box;
+  z-index: 1;
+  overflow: hidden;
+  max-height: 70vh;
+}
+
+.settings h1{
+  display: flex;
+  position: sticky;
+  top: 0px;
+  width: 100%;
+  background-color: rgba(106,88,211,1);
+  margin: 0px;
+  padding: 5px;
+}
+
+.settings .settings-container{
+  display: block;
+  overflow-y: auto;
+  overflow-x: hidden;
+  height: 90%;
+}
+
+.settings .fields{
+  display: flex;
+  flex-direction: column;
+}
+
+.settings .fields .field{
+  display: flex;
+  flex-direction: row;
+  gap: 5px;
+  height: 40px;
+  align-items: center;
+}
+
+.settings .fields .field input, select{
+  background: none;
+  border: none;
+  border-bottom: 1px solid rgba(106,88,211,1);
+  width: 50px;
+  height: 30px;
+  text-align: center;
+}
+.settings .fields .field option{
+  color: white;
+  background-color: rgb(59, 44, 139);
+}
+
 .editor {
   position: relative;
   width: 50%;
@@ -104,7 +194,6 @@
   gap: 10px;
   position: absolute;
   top: -40px;
-  
 }
 
 .editor .files > span{
@@ -203,10 +292,9 @@ textarea {
 .keyword { color: cyan; font-weight: bold; }
 .operator { color: orange; }
 .type { color: violet; }
-.variable { color: lightblue; }
 .gate{color: lightgreen;}
 .pin{font-style: italic; color: #7F95EB;}
-.comment{opacity: 0.8; color:rgb(255, 126, 126);}
+.comment{opacity: 0.8; color:#ff7e7e;}
 
 .breadboard {
   position: relative;

@@ -2,7 +2,9 @@
 
 A programming language where you write code that "compiles" into circuits
 
-![code](editor.png)
+
+![code](editor.png) | ![code](settings.png)
+-|-
 
 # Documentation
 
@@ -36,3 +38,7 @@ Combining them:
 - Assignment operators: `<` `>`
 - Circuit enclosing operators: `[` `]`
 - Boolean operators: `?` `:`
+
+# ToDo
+- Save `.cqt` files.
+- Save `schamas` into json files (the position of elements on the board).

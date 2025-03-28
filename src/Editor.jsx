@@ -99,6 +99,7 @@ const Editor = forwardRef(({ callback, files, setCode, setStats,addFile }, ref) 
         "keyword_gled": 'A green led, <in >out',
         "keyword_bled": 'A blue led, <in >out',
         "keyword_clock": 'A clock that oscillates based on the hz input, <hz >out',
+        "keyword_.include": 'Includes a file˙s circuits.'
     }
 
     const handleKeyDown = (event) => {
@@ -122,6 +123,8 @@ const Editor = forwardRef(({ callback, files, setCode, setStats,addFile }, ref) 
         success('New board created!')
     }
 
+    
+
     const highlightSyntax = (text) => {
         const circuitNamePattern = /\[\s*(\w+)/g;
         const hertzPattern = /\b(\d+(\.\d*)?)hz\b/g;
@@ -137,31 +140,39 @@ const Editor = forwardRef(({ callback, files, setCode, setStats,addFile }, ref) 
         }
     
         const parts = text.split(/(#[^\n]*|\s+|[\[\]<>?:])/g);
+        let line = 0;
     
         return parts.map((part, index) => {
+            if(part.includes('\n')){
+                line++;
+            }
             if (commentPattern.test(part)) {
-                return <span key={index} className="comment" data-type="Comment" data-desc="Just notes...">{part}</span>;
+                return <span key={index} id={`line-${line}`} className="comment" data-type="Comment" data-desc="Just notes...">{part}</span>;
             }
             if (circuitNames.includes(part)) {
-                return <span key={index} className="keyword" data-type="Circuit" data-desc={help[`keyword_${part}`]}>{part}</span>;
+                return <span key={index} id={`line-${line}`} className="keyword" data-type="Circuit" data-desc={help[`keyword_${part}`]}>{part}</span>;
             }
             if (gates.some((gate) => validGateCombinations.includes(part))) {
-                return <span key={index} className="gate" data-type="Gate" data-desc="A logical gate.">{part}</span>;
+                return <span key={index} id={`line-${line}`} className="gate" data-type="Gate" data-desc="A logical gate.">{part}</span>;
             }
             if (operators.includes(part)) {
-                return <span key={index} className="operator" data-type="Operator" data-desc="...">{part}</span>;
+                return <span key={index} id={`line-${line}`} className="operator" data-type="Operator" data-desc="...">{part}</span>;
             }
             if (consts.includes(part)) {
-                return <span key={index} className="type" data-type="Constant" data-desc="A constant value.">{part}</span>;
+                return <span key={index} id={`line-${line}`} className="type" data-type="Constant" data-desc="A constant value.">{part}</span>;
             }
             if (hertzPattern.test(part)) {
-                return <span key={index} className="type" data-type="Type" data-desc="...">{part}</span>;
+                return <span key={index} id={`line-${line}`} className="type" data-type="Type" data-desc="...">{part}</span>;
             }
             if (variablePattern.test(part)) {
-                return <span key={index} className="pin" data-type="Pin" data-desc="A circuit instance's pin.">{part}</span>;
+                return <span key={index} id={`line-${line}`} className="pin" data-type="Pin" data-desc="A circuit instance's pin.">{part}</span>;
             }
             if (bitArrayPattern.test(part)) {
-                return <span key={index} className="type" data-type="Bits" data-desc="A sequence of bits.">{part}</span>;
+                return <span key={index} id={`line-${line}`} className="type" data-type="Bits" data-desc="A sequence of bits.">{part}</span>;
+            }
+            
+            if(part.includes(".include")){
+                return <span key={index} id={`line-${line}`} className="keyword" data-type="File" data-desc={help[`keyword_${part}`]}>{part}</span>;
             }
             return part;
         });
@@ -174,11 +185,23 @@ const Editor = forwardRef(({ callback, files, setCode, setStats,addFile }, ref) 
         const instancePattern = /^\s*(\w+)\s+(\w+)/gm; 
         const pinPattern = /([<>])(\w+)/g; 
         const assignmentPattern = /(\w+)\.(\w+)\s*<\s*([\w.]+)/g; 
+        const includePattern = /\.include\s+(\S+)/g; 
     
         let declaredCircuits = new Map();
         let tree = [];
+
+        let includeMatch;
+        while ((includeMatch = includePattern.exec(text)) !== null) {
+            const fileName = includeMatch[1];
+            const file = files.find(f => f.title === fileName);
+            
+            if (file) {
+                text += `\n${file.code.replace(boardPattern.exec(file.code),'')}`;
+            } else {
+                error(`No file can be found: ${fileName}.cqt`);
+            }
+        }
         
-        text = text + circuits;
         text = text.replace(/#.*/g,'')
         
         for (let match of text.matchAll(circuitPattern)) {
@@ -235,7 +258,7 @@ const Editor = forwardRef(({ callback, files, setCode, setStats,addFile }, ref) 
             let instanceName = match[1]; 
             let pinName = match[2]; 
             let value = match[3]; 
-        
+   
             if (instances.has(instanceName)) {
                 let instance = instances.get(instanceName);
         
