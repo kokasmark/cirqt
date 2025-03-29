@@ -4,13 +4,14 @@ import Editor from './Editor'
 import Breadboard from './Breadboard'
 
 function App() {
-  const [tree, setTree] = useState([]);
-  const [stats, setStats] = useState({'cycles': 0, 'updatedInstances': 4, 'allInstances': 0})
-  const editor = useRef(null);
+    const [tree, setTree] = useState([]);
+    const [stats, setStats] = useState({ 'cycles': 0, 'updatedInstances': 4, 'allInstances': 0 })
+    const editor = useRef(null);
 
-  const [files, setFiles] = useState([
-    {title: 'library', 
-    code: `
+    const [files, setFiles] = useState([
+        {
+            title: 'library',
+            code: `
 [rled <in >out
     out < in
 ]
@@ -52,9 +53,10 @@ function App() {
     Q < ! (R | QN)
     QN < ! (S | Q)
 ]`},
-    {title: 'board(1)', 
-code: 
-`
+        {
+            title: 'board(1)',
+            code:
+                `
 .include library # contains basic circuits
 
 [a <clk <i1 <i2 >o1 >o2 >o3
@@ -82,17 +84,18 @@ code:
     ]
     )
 
-    const setCode = (index,code) => {
+    const setCode = (index, code) => {
         let updatedFiles = files;
-        
+
         updatedFiles[index].code = code;
 
         setFiles(updatedFiles)
     }
 
-    const addFile = () =>{
+    const addFile = () => {
         let updatedFiles = files;
-        updatedFiles.push({title: `board(${files.length})`, 
+        updatedFiles.push({
+            title: `board(${files.length})`,
             code: `
 .include library
 
@@ -120,81 +123,98 @@ code:
                 console.warn("Editor ref is not assigned yet!");
             }
 
-            return updatedTree; 
+            return updatedTree;
         });
     };
 
     const [action, setAction] = useState(-1);
 
+    const [appConfig,setAppConfig] = useState({theme: 'haze' });
+
     const [settings, setSettings] = useState([
-        {title: 'editor settings', 
+        {
+            title: 'editor settings',
             fields: [
-                {name: 'theme', default: 100, width: 50, type: 'select', options: ['haze (default)', 'night', 'sunset', 'cold']}
-            ]},
-        {title: 'engine settings', 
+                { name: 'theme', default: appConfig.theme, width: 100, type: 'select', options: ['haze', 'night', 'sunset', 'cold'] },
+                { name: 'gridX', default: 20, width: 50, type: 'number' },
+                { name: 'gridY', default: 20, width: 50, type: 'number' },
+            ]
+        },
+        {
+            title: 'engine settings',
             fields: [
-                {name: 'maxCycleCount', default: 100, width: 50, type: 'number'},
-                {name: 'maxUpdateCount', default: '-', width: 50, type: 'number'},
-                {name: 'maxClockHertz', default: '-', width: 50, type: 'number'}
-            ]}, 
-        {title: 'syntax highlight settings', 
+                { name: 'maxCycleCount', default: 100, width: 50, type: 'number' },
+                { name: 'maxUpdateCount', default: '-', width: 50, type: 'number' },
+                { name: 'maxClockHertz', default: '-', width: 50, type: 'number' }
+            ]
+        },
+        {
+            title: 'syntax highlight settings',
             fields: [
-                {name: 'keywordColor', default: 'cyan', width: 100, type: 'color'},
-                {name: 'operatorColor', default: 'orange', width: 100, type: 'color'},
-                {name: 'typeColor', default: 'violet', width: 100, type: 'color'},
-                {name: 'gateColor', default: 'lightgreen', width: 100, type: 'color'},
-                {name: 'pinColor', default: '#7f95eb', width: 100, type: 'color'},
-                {name: 'commentColor', default: '#ff7e7e', width: 100, type: 'color'}
-            ]}]);
-
-  return (
-    <div className='app'>
-      <div className='header'>
-      <p style={{fontSize: 20, fontWeight: 'bolder', color: '#fff'}}>[cirqt]</p>
-        <div className='actions'>
-          <span className={`action-btn`} style={{background: '#FF7E7E'}} data-title="Close Board" onClick={()=> action === 0 ? setAction(-1): setAction(0)}></span>
-          <span className={`action-btn`} style={{background: '#DDF58B'}} data-title="Save Board"  onClick={()=> action === 1 ? setAction(-1): setAction(1)}></span>
-          <span className={`action-btn`} style={{background: '#7F95EB'}} data-title="Settings"  onClick={()=> action === 2 ? setAction(-1): setAction(2)}></span>
-        </div>
-      </div>
-
+                { name: 'keywordColor', default: 'cyan', width: 100, type: 'color' },
+                { name: 'operatorColor', default: 'orange', width: 100, type: 'color' },
+                { name: 'typeColor', default: 'violet', width: 100, type: 'color' },
+                { name: 'gateColor', default: 'lightgreen', width: 100, type: 'color' },
+                { name: 'pinColor', default: '#7f95eb', width: 100, type: 'color' },
+                { name: 'commentColor', default: '#ff7e7e', width: 100, type: 'color' }
+            ]
+        }]);
     
-      <div className={`container`}>
-        <Editor ref={editor} files={files} 
-        callback={setTree} setCode={setCode} setStats={setStats} addFile={addFile}/>
-        <Breadboard tree={tree} update={updateTree} stats={stats}/>
-      </div>
+    const updateConfig = (key,value) => {
+        console.log(`Config updated at ${key} to ${value}`)
+        let updatedConfig = appConfig;
+        updatedConfig[key] = value;
+        setAppConfig(updatedConfig)
+    }
 
-      {action === 2 && 
-        <div className="settings-dropdown">
-            <div className="settings">
-              <h1>Settings</h1>
-                <span className='settings-container'>
-                    {settings.map((setting, index)=>(
-                    <span style={{display: 'block',borderBottom:'1px solid rgb(59, 44, 139)', width: '100%', padding: 5}}>
-                        <h2>{setting.title}</h2>
-                        <span className='fields'>
-                            {setting.fields.map((field, index) => (
-                                <span className='field'>
-                                    <p style={{background: 'rgba(106,88,211,1)', padding: 5, borderRadius: 5}}>{field.name}</p>
-                                    {field.type !== "select" ? 
-                                    <input defaultValue={field.default} style={{width: field.width, color: field.type === "color" ? field.default : 'white'}}></input> :
-                                    <select>
-                                        {field.options.map((option, index)=>(
-                                            <option value={index}>{option}</option>
-                                        ))}    
-                                    </select>}
+    return (
+        <div className={`app ${appConfig.theme}`} id='app'>
+            <div className='header'>
+                <p style={{ fontSize: 20, fontWeight: 'bolder', color: '#fff' }}>[cirqt]</p>
+                <div className='actions'>
+                    <span className={`action-btn`} style={{ background: '#FF7E7E' }} data-title="Close Board" onClick={() => action === 0 ? setAction(-1) : setAction(0)}></span>
+                    <span className={`action-btn`} style={{ background: '#DDF58B' }} data-title="Save Board" onClick={() => action === 1 ? setAction(-1) : setAction(1)}></span>
+                    <span className={`action-btn`} style={{ background: '#7F95EB' }} data-title="Settings" onClick={() => action === 2 ? setAction(-1) : setAction(2)}></span>
+                </div>
+            </div>
+
+
+            <div className={`container`}>
+                <Editor ref={editor} files={files}
+                    callback={setTree} setCode={setCode} setStats={setStats} addFile={addFile} />
+                <Breadboard tree={tree} update={updateTree} stats={stats} />
+            </div>
+
+            {action === 2 &&
+                <div className="settings-dropdown">
+                    <div className="settings">
+                        <h1>Settings</h1>
+                        <span className='settings-container'>
+                            {settings.map((setting, index) => (
+                                <span style={{ display: 'block', borderBottom: '1px solid var(--primary)', width: '100%', padding: 5 }}>
+                                    <h2>{setting.title}</h2>
+                                    <span className='fields'>
+                                        {setting.fields.map((field, index) => (
+                                            <span className='field'>
+                                                <p style={{ background: 'var(--secondary)', padding: 5, borderRadius: 5 }}>{field.name}</p>
+                                                {field.type !== "select" ?
+                                                    <input defaultValue={field.default} style={{ width: field.width, color: field.type === "color" ? field.default : 'white' }}></input> :
+                                                    <select style={{ width: field.width }} onChange={(e)=>updateConfig(field.name, e.target.value)}>
+                                                        {field.options.map((option, index) => (
+                                                            <option value={option}>{option}</option>
+                                                        ))}
+                                                    </select>}
+                                            </span>
+                                        ))}
+                                    </span>
                                 </span>
                             ))}
                         </span>
-                    </span>
-                ))}
-                </span>
-            </div>
+                    </div>
+                </div>
+            }
         </div>
-        }
-    </div>
-  )
+    )
 }
 
 export default App

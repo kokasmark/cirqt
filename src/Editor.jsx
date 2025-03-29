@@ -2,6 +2,9 @@ import { useEffect, useState, forwardRef, useImperativeHandle } from "react";
 import "./App.css";
 import { Bounce, ToastContainer, toast } from 'react-toastify';
 
+
+let lastEvaluation = 0;
+
 const Editor = forwardRef(({ callback, files, setCode, setStats,addFile }, ref) => {
     const [current,setCurrent] = useState(0);
 
@@ -345,11 +348,8 @@ const Editor = forwardRef(({ callback, files, setCode, setStats,addFile }, ref) 
     };
 
     let lastEvaluationCycleCount = 0;
-    let lastEvaluationUpdates = 0;
-    let lastEvaluation = 0;
+    let lastEvaluationUpdates = 0
     const evaluate = (tree) => {
-        lastEvaluation = performance.now();
-
         let pinValues = {};
         let connections = {};
         let change = true;
@@ -477,8 +477,8 @@ const Editor = forwardRef(({ callback, files, setCode, setStats,addFile }, ref) 
 
     return (
         <div className="editor"
-            onPointerEnter={()=>document.documentElement.style.setProperty('--left-side-percent','120%')}
-            onPointerLeave={()=>document.documentElement.style.setProperty('--left-side-percent','60%')}>
+            onPointerEnter={()=>{document.getElementById("app").style.setProperty('--left-side-percent','120%');document.getElementById("app").style.setProperty('--right-side-percent','40%')}}
+            onPointerLeave={()=>{document.getElementById("app").style.setProperty('--left-side-percent','60%');document.getElementById("app").style.setProperty('--right-side-percent','60%')}}>
             <div className="files">
                 {files.map((file, index) => (
                     <span onClick={()=>setCurrent(index)} style={{filter: index === current ? '' : 'brightness(0.5)'}}>

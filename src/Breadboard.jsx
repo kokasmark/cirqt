@@ -55,8 +55,8 @@ function Breadboard({tree, update, stats}) {
 
 return (
   <div className="breadboard"
-      onPointerEnter={()=>document.documentElement.style.setProperty('--right-side-percent','120%')}
-            onPointerLeave={()=>document.documentElement.style.setProperty('--right-side-percent','60%')}>
+    onPointerEnter={()=>{document.getElementById("app").style.setProperty('--left-side-percent','40%');document.getElementById("app").style.setProperty('--right-side-percent','120%')}}
+    onPointerLeave={()=>{document.getElementById("app").style.setProperty('--left-side-percent','60%');document.getElementById("app").style.setProperty('--right-side-percent','60%')}}>
       <div className="stats">
         <span data-type="Cycles" data-desc="The last evaluation took this many cycles.">
           <GrPowerCycle fontSize={20}/>

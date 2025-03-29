@@ -1,33 +1,17 @@
-@property --left-side-percent {
-  syntax: '<percentage>'; 
-  initial-value: 60%;
-  inherits: false;
-}
-
-@property --right-side-percent {
-  syntax: '<percentage>'; 
-  initial-value: 60%;
-  inherits: false;
-}
 
 :root {
   font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
   font-weight: 400;
-  
-  --right-side-percent: 60%;
 
   color-scheme: light dark;
   color: rgba(255, 255, 255, 0.87);
-  background: radial-gradient(circle at 25% center, rgba(106, 88, 211, 0.7) 20%, transparent var(--left-side-percent)),
-  radial-gradient(circle at 75% center, rgba(211, 88, 106, 0.7) 20%, transparent var(--right-side-percent));
+
 
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-
-  transition: --left-side-percent 1s,  --right-side-percent 1s;
 }
 
 a {

@@ -3,6 +3,18 @@
   src: url(./fonts/VT323-Regular.ttf);
 }
 
+@property --left-side-percent {
+  syntax: '<percentage>'; 
+  initial-value: 60%;
+  inherits: false;
+}
+
+@property --right-side-percent {
+  syntax: '<percentage>'; 
+  initial-value: 60%;
+  inherits: false;
+}
+
 #root {
   width: 100vw;
   height: 100vh;
@@ -15,8 +27,35 @@
   width: 100%;
   height: 100%;
   overflow: hidden;
+
+  --primary: rgba(106, 88, 211, 0.7);
+  --secondary: rgba(211, 88, 106, 0.7);
+
+  background: radial-gradient(circle at 25% center, var(--primary) 20%, transparent var(--left-side-percent)),
+  radial-gradient(circle at 75% center, var(--secondary) 20%, transparent var(--right-side-percent));
+  
+  transition: --left-side-percent 1s,  --right-side-percent 1s;
 }
 
+.app.haze{
+  --primary: rgba(106, 88, 211, 0.7);
+  --secondary: rgba(211, 88, 106, 0.7);
+}
+
+.app.night{
+  --primary: rgba(5, 7, 117, 0.7) !important;
+  --secondary: rgba(78, 121, 238, 0.7) !important;
+}
+
+.app.sunset{
+  --primary: rgba(212, 134, 44, 0.7) !important;
+  --secondary: rgba(238, 78, 139, 0.7) !important;
+}
+
+.app.cold{
+  --primary: rgba(100, 100, 100, 0.7) !important;
+  --secondary: rgba(64, 101, 202, 0.7) !important;
+}
 /* width */
 ::-webkit-scrollbar {
   width: 5px;
@@ -30,7 +69,7 @@
 
 /* Handle */
 ::-webkit-scrollbar-thumb {
-  background: rgba(106,88,211,1);
+  background: var(--secondary);
   border-radius: 10px;
 }
 
@@ -136,7 +175,7 @@
   position: sticky;
   top: 0px;
   width: 100%;
-  background-color: rgba(106,88,211,1);
+  background-color: var(--secondary);
   margin: 0px;
   padding: 5px;
 }
@@ -164,14 +203,14 @@
 .settings .fields .field input, select{
   background: none;
   border: none;
-  border-bottom: 1px solid rgba(106,88,211,1);
+  border-bottom: 1px solid var(--primary);
   width: 50px;
   height: 30px;
   text-align: center;
 }
 .settings .fields .field option{
   color: white;
-  background-color: rgb(59, 44, 139);
+  background-color: var(--primary);
 }
 
 .editor {
@@ -390,6 +429,8 @@ textarea {
 .built-in-circuit{
   cursor: grabbing;
   filter: drop-shadow(5px 2px 5px #121212);
+
+  transition: background 0.5s, filter 0.5s;
 }
 
 .circuit-container .pins{
