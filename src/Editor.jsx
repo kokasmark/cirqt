@@ -5,9 +5,7 @@ import { Bounce, ToastContainer, toast } from 'react-toastify';
 
 let lastEvaluation = 0;
 
-const Editor = forwardRef(({ callback, files, setCode, setStats,addFile }, ref) => {
-    const [current,setCurrent] = useState(0);
-
+const Editor = forwardRef(({ callback, files, setCode, setStats,addFile,setCurrent,current }, ref) => {
     const circuits = `
     [rled <in >out
         out < in

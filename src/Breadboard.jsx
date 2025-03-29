@@ -11,7 +11,7 @@ import { FaMicrochip } from "react-icons/fa";
 import { RiTimerLine } from "react-icons/ri";
 import { RiRestTimeLine } from "react-icons/ri";
 
-function Breadboard({tree, update, stats}) {
+function Breadboard({tree, update, stats, updateSchema,schema}) {
   const updateXarrow = useXarrow();
   const nodeRefs = useRef([]);
   if (nodeRefs.current.length !== tree.length) {
@@ -78,12 +78,12 @@ return (
 
       {tree.map((circuit, index) => (
           <span>
-            {circuit.circuit === "rled" && <Led circuit={circuit} index={index} updateXarrow={updateXarrow} color={'#FF7E7E'}/>}
-            {circuit.circuit === "gled" && <Led circuit={circuit} index={index} updateXarrow={updateXarrow} color={'#DDF58B'}/>}
-            {circuit.circuit === "bled" && <Led circuit={circuit} index={index} updateXarrow={updateXarrow} color={'#7F95EB'}/>}
-            {circuit.circuit === "switch" && <Switch circuit={circuit} index={index} updateXarrow={updateXarrow} update={update}/>}
-            {circuit.circuit === "clock" && <Clock circuit={circuit} index={index} updateXarrow={updateXarrow} update={update}/>}
-            {!predefinedCircuits.includes(circuit.circuit) && <Circuit circuit={circuit} index={index} updateXarrow={updateXarrow}/>}
+            {circuit.circuit === "rled" && <Led circuit={circuit} index={index} updateXarrow={updateXarrow} color={'#FF7E7E'}  updateSchema={updateSchema} schema={schema}/>}
+            {circuit.circuit === "gled" && <Led circuit={circuit} index={index} updateXarrow={updateXarrow} color={'#DDF58B'}  updateSchema={updateSchema} schema={schema}/>}
+            {circuit.circuit === "bled" && <Led circuit={circuit} index={index} updateXarrow={updateXarrow} color={'#7F95EB'}  updateSchema={updateSchema} schema={schema}/>}
+            {circuit.circuit === "switch" && <Switch circuit={circuit} index={index} updateXarrow={updateXarrow} update={update}  updateSchema={updateSchema} schema={schema}/>}
+            {circuit.circuit === "clock" && <Clock circuit={circuit} index={index} updateXarrow={updateXarrow} update={update}  updateSchema={updateSchema} schema={schema}/>}
+            {!predefinedCircuits.includes(circuit.circuit) && <Circuit circuit={circuit} index={index} updateXarrow={updateXarrow} updateSchema={updateSchema} schema={schema}/>}
           </span>
       ))}
 

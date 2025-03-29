@@ -52,7 +52,8 @@ function App() {
 [sr_latch <S <R >Q >QN
     Q < ! (R | QN)
     QN < ! (S | Q)
-]`},
+]`,
+schema: {}},
         {
             title: 'board(1)',
             code:
@@ -80,7 +81,29 @@ function App() {
     l.in < aa.o1
     g.in < aa.o2
     b.in < aa.o3 # This is a comment
-]`}
+]`,
+schema:{
+    "aa": {
+        "x": 167,
+        "y": 255
+    },
+    "b": {
+        "x": 66,
+        "y": 401
+    },
+    "l": {
+        "x": -69,
+        "y": 413
+    },
+    "c": {
+        "x": -139,
+        "y": 91
+    },
+    "g": {
+        "x": -5,
+        "y": 433
+    }
+}}
     ]
     )
 
@@ -89,6 +112,14 @@ function App() {
 
         updatedFiles[index].code = code;
 
+        setFiles(updatedFiles)
+    }
+
+    const updateSchema = (key, value) => {
+        let updatedFiles = files;
+        console.log(`Schema updated at ${key}!`)
+        updatedFiles[current].schema[key] = value;
+        console.log( updatedFiles[current].schema)
         setFiles(updatedFiles)
     }
 
@@ -107,7 +138,9 @@ function App() {
 
 ]
 
-`})
+`,
+schema: {}}
+)
         setFiles(updatedFiles)
     }
 
@@ -128,6 +161,8 @@ function App() {
     };
 
     const [action, setAction] = useState(-1);
+
+    const [current, setCurrent] = useState(0);
 
     const [appConfig,setAppConfig] = useState({theme: 'haze' });
 
@@ -181,8 +216,9 @@ function App() {
 
             <div className={`container`}>
                 <Editor ref={editor} files={files}
-                    callback={setTree} setCode={setCode} setStats={setStats} addFile={addFile} />
-                <Breadboard tree={tree} update={updateTree} stats={stats} />
+                    callback={setTree} setCode={setCode} setStats={setStats} addFile={addFile} setCurrent={setCurrent} current={current}/>
+                <Breadboard tree={tree} stats={stats} 
+                 update={updateTree} updateSchema={updateSchema} schema={files[current].schema}/>
             </div>
 
             {action === 2 &&

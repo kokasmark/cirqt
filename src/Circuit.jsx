@@ -2,15 +2,16 @@ import React,{useRef} from 'react'
 import './App.css';
 import Draggable from 'react-draggable';
 
-function Circuit({circuit, index, updateXarrow}){
+function Circuit({circuit, index, updateXarrow,updateSchema,schema}){
     const nodeRef = useRef(null);
     return (
         <Draggable
               key={`circuit-${index}`}
               onDrag={updateXarrow}
-              onStop={updateXarrow}
+              onStop={(e, data)=>{updateXarrow(); updateSchema(circuit.name, {x: data.x, y:data.y})}}
               nodeRef={nodeRef}
               grid={[20,20]}
+              defaultPosition={schema[circuit.name]}
           >
               <div className="circuit-container" id={`circuit-${index}`} ref={nodeRef}>
                   <span className="pins">
