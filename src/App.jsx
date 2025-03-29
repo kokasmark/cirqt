@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import './App.css'
 import Editor from './Editor'
 import Breadboard from './Breadboard'
+import logo from '../banner.png'
 
 function App() {
     const [tree, setTree] = useState([]);
@@ -205,7 +206,7 @@ schema: {}}
     return (
         <div className={`app ${appConfig.theme}`} id='app'>
             <div className='header'>
-                <p style={{ fontSize: 20, fontWeight: 'bolder', color: '#fff' }}>[cirqt]</p>
+                <img src={logo} style={{height: '90%'}}/>
                 <div className='actions'>
                     <span className={`action-btn`} style={{ background: '#FF7E7E' }} data-title="Close Board" onClick={() => action === 0 ? setAction(-1) : setAction(0)}></span>
                     <span className={`action-btn`} style={{ background: '#DDF58B' }} data-title="Save Board" onClick={() => action === 1 ? setAction(-1) : setAction(1)}></span>

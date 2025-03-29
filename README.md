@@ -1,4 +1,4 @@
-![logo](logo.png)
+![logo](banner.png)
 
 A programming language where you write code that "compiles" into circuits
 

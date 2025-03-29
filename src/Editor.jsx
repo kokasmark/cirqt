@@ -367,7 +367,7 @@ const Editor = forwardRef(({ callback, files, setCode, setStats,addFile,setCurre
                         let voltage = bits[instance.step % bits.length] === '1' ? 'H' : 'L';
                         pinValues[`${instance.name}-${pin.name}`] = voltage;
                         pin.voltage = voltage;
-                        console.log(`${instance.step} => ${voltage}`)
+
                     }
                 });
                 instance.outputs.forEach(pin => {
@@ -475,8 +475,9 @@ const Editor = forwardRef(({ callback, files, setCode, setStats,addFile,setCurre
 
     return (
         <div className="editor"
-            onPointerEnter={()=>{document.getElementById("app").style.setProperty('--left-side-percent','120%');document.getElementById("app").style.setProperty('--right-side-percent','40%')}}
-            onPointerLeave={()=>{document.getElementById("app").style.setProperty('--left-side-percent','60%');document.getElementById("app").style.setProperty('--right-side-percent','60%')}}>
+            // onPointerEnter={()=>{document.getElementById("app").style.setProperty('--left-side-percent','120%');document.getElementById("app").style.setProperty('--right-side-percent','40%')}}
+            // onPointerLeave={()=>{document.getElementById("app").style.setProperty('--left-side-percent','60%');document.getElementById("app").style.setProperty('--right-side-percent','60%')}}
+            >
             <div className="files">
                 {files.map((file, index) => (
                     <span onClick={()=>setCurrent(index)} style={{filter: index === current ? '' : 'brightness(0.5)'}}>
