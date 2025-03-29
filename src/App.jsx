@@ -165,7 +165,7 @@ schema: {}}
 
     const [current, setCurrent] = useState(0);
 
-    const [appConfig,setAppConfig] = useState({theme: 'haze' });
+    const [appConfig,setAppConfig] = useState({theme: 'night' });
 
     const [settings, setSettings] = useState([
         {
