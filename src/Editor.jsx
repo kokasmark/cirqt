@@ -5,7 +5,7 @@ import { Bounce, ToastContainer, toast } from 'react-toastify';
 
 let lastEvaluation = 0;
 
-const Editor = forwardRef(({ callback, files, setCode, setStats,addFile,setCurrent,current }, ref) => {
+const Editor = forwardRef(({ callback, files, setCode, setStats,addFile,setCurrent,current, appConfig }, ref) => {
     const circuits = `
     [rled <in >out
         out < in
@@ -148,28 +148,28 @@ const Editor = forwardRef(({ callback, files, setCode, setStats,addFile,setCurre
                 line++;
             }
             if (commentPattern.test(part)) {
-                return <span key={index} id={`line-${line}`} className="comment" data-type="Comment" data-desc="Just notes...">{part}</span>;
+                return <span key={index} id={`line-${line}`} className="comment" data-type="Comment" data-desc="Just notes..." style={{color: appConfig['commentColor']}}>{part}</span>;
             }
             if (circuitNames.includes(part)) {
-                return <span key={index} id={`line-${line}`} className="keyword" data-type="Circuit" data-desc={help[`keyword_${part}`]}>{part}</span>;
+                return <span key={index} id={`line-${line}`} className="keyword" data-type="Circuit" data-desc={help[`keyword_${part}`]} style={{color: appConfig['keywordColor']}}>{part}</span>;
             }
             if (gates.some((gate) => validGateCombinations.includes(part))) {
-                return <span key={index} id={`line-${line}`} className="gate" data-type="Gate" data-desc="A logical gate.">{part}</span>;
+                return <span key={index} id={`line-${line}`} className="gate" data-type="Gate" data-desc="A logical gate." style={{color: appConfig['gateColor']}}>{part}</span>;
             }
             if (operators.includes(part)) {
-                return <span key={index} id={`line-${line}`} className="operator" data-type="Operator" data-desc="...">{part}</span>;
+                return <span key={index} id={`line-${line}`} className="operator" data-type="Operator" data-desc="..." style={{color: appConfig['operatorColor']}}>{part}</span>;
             }
             if (consts.includes(part)) {
-                return <span key={index} id={`line-${line}`} className="type" data-type="Constant" data-desc="A constant value.">{part}</span>;
+                return <span key={index} id={`line-${line}`} className="type" data-type="Constant" data-desc="A constant value." style={{color: appConfig['typeColor']}}>{part}</span>;
             }
             if (hertzPattern.test(part)) {
-                return <span key={index} id={`line-${line}`} className="type" data-type="Type" data-desc="...">{part}</span>;
+                return <span key={index} id={`line-${line}`} className="type" data-type="Type" data-desc="..." style={{color: appConfig['typeColor']}}>{part}</span>;
             }
             if (variablePattern.test(part)) {
-                return <span key={index} id={`line-${line}`} className="pin" data-type="Pin" data-desc="A circuit instance's pin.">{part}</span>;
+                return <span key={index} id={`line-${line}`} className="pin" data-type="Pin" data-desc="A circuit instance's pin." style={{color: appConfig['pinColor']}}>{part}</span>;
             }
             if (bitArrayPattern.test(part)) {
-                return <span key={index} id={`line-${line}`} className="type" data-type="Bits" data-desc="A sequence of bits.">{part}</span>;
+                return <span key={index} id={`line-${line}`} className="type" data-type="Bits" data-desc="A sequence of bits." style={{color: appConfig['typeColor']}}>{part}</span>;
             }
             
             if(part.includes(".include")){
@@ -379,7 +379,7 @@ const Editor = forwardRef(({ callback, files, setCode, setStats,addFile,setCurre
             //Evaluate
             let cycles = 0;
             while(change){
-                if(cycles > 100){
+                if(cycles > appConfig['maxCycleCount']){
                     error("Evaluation timed out!")
                     break;
                 }
@@ -417,8 +417,8 @@ const Editor = forwardRef(({ callback, files, setCode, setStats,addFile,setCurre
                             return;
                         }
                     });
-
-                    instance.step = (instance.step + 1) % 64;
+                    if(change)
+                        instance.step = (instance.step + 1) % appConfig['maxUpdateCount'];
                 });
                 cycles++;
             }
@@ -475,8 +475,18 @@ const Editor = forwardRef(({ callback, files, setCode, setStats,addFile,setCurre
 
     return (
         <div className="editor"
-            // onPointerEnter={()=>{document.getElementById("app").style.setProperty('--left-side-percent','120%');document.getElementById("app").style.setProperty('--right-side-percent','40%')}}
-            // onPointerLeave={()=>{document.getElementById("app").style.setProperty('--left-side-percent','60%');document.getElementById("app").style.setProperty('--right-side-percent','60%')}}
+            onPointerEnter={() => {
+                if (appConfig['animateBackground']) {
+                    document.getElementById("app").style.setProperty('--left-side-percent', '120%');
+                    document.getElementById("app").style.setProperty('--right-side-percent', '40%');
+                }
+            }}
+            onPointerLeave={()=>() => {
+                if (appConfig['animateBackground']) {
+                    document.getElementById("app").style.setProperty('--left-side-percent', '60%');
+                    document.getElementById("app").style.setProperty('--right-side-percent', '60%');
+                }
+            }}
             >
             <div className="files">
                 {files.map((file, index) => (

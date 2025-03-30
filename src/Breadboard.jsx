@@ -11,7 +11,7 @@ import { FaMicrochip } from "react-icons/fa";
 import { RiTimerLine } from "react-icons/ri";
 import { RiRestTimeLine } from "react-icons/ri";
 
-function Breadboard({tree, update, stats, updateSchema,schema}) {
+function Breadboard({tree, update, stats, updateSchema,schema,appConfig}) {
   const updateXarrow = useXarrow();
   const nodeRefs = useRef([]);
   if (nodeRefs.current.length !== tree.length) {
@@ -55,8 +55,18 @@ function Breadboard({tree, update, stats, updateSchema,schema}) {
 
 return (
   <div className="breadboard"
-    // onPointerEnter={()=>{document.getElementById("app").style.setProperty('--left-side-percent','40%');document.getElementById("app").style.setProperty('--right-side-percent','120%')}}
-    // onPointerLeave={()=>{document.getElementById("app").style.setProperty('--left-side-percent','60%');document.getElementById("app").style.setProperty('--right-side-percent','60%')}}
+  onPointerEnter={() => {
+    if (appConfig['animateBackground']) {
+        document.getElementById("app").style.setProperty('--left-side-percent', '40%');
+        document.getElementById("app").style.setProperty('--right-side-percent', '120%');
+    }
+}}
+onPointerLeave={()=>() => {
+    if (appConfig['animateBackground']) {
+        document.getElementById("app").style.setProperty('--left-side-percent', '60%');
+        document.getElementById("app").style.setProperty('--right-side-percent', '60%');
+    }
+}}
     >
       <div className="stats">
         <span data-type="Cycles" data-desc="The last evaluation took this many cycles.">
@@ -106,7 +116,6 @@ return (
                 middle: `${connection.startPinName} → ${connection.endPinName}`, // Centered label
               }}
               path="grid"
-              gridBreak={`${((index+1)/(connections.length+1))*100}%`}
               animateDrawing={0.5}
           />
           </span>

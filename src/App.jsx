@@ -165,7 +165,7 @@ schema: {}}
 
     const [current, setCurrent] = useState(0);
 
-    const [appConfig,setAppConfig] = useState({theme: 'night' });
+    const [appConfig,setAppConfig] = useState({theme: 'night', maxCycleCount: 100, maxUpdateCount: 64 });
 
     const [settings, setSettings] = useState([
         {
@@ -174,13 +174,14 @@ schema: {}}
                 { name: 'theme', default: appConfig.theme, width: 100, type: 'select', options: ['haze', 'night', 'sunset', 'cold'] },
                 { name: 'gridX', default: 20, width: 50, type: 'number' },
                 { name: 'gridY', default: 20, width: 50, type: 'number' },
+                {name: 'animateBackground', default: false, type: 'switch'}
             ]
         },
         {
             title: 'engine settings',
             fields: [
                 { name: 'maxCycleCount', default: 100, width: 50, type: 'number' },
-                { name: 'maxUpdateCount', default: '-', width: 50, type: 'number' },
+                { name: 'maxUpdateCount', default: 64, width: 50, type: 'number' },
                 { name: 'maxClockHertz', default: '-', width: 50, type: 'number' }
             ]
         },
@@ -194,6 +195,14 @@ schema: {}}
                 { name: 'pinColor', default: '#7f95eb', width: 100, type: 'color' },
                 { name: 'commentColor', default: '#ff7e7e', width: 100, type: 'color' }
             ]
+        },
+        {
+            title: 'about',
+            fields: [
+                { name: 'creator', default: 'kokasmark', width: 100, type: 'about' },
+                { name: 'github', default: 'github.com/kokasmark/cirqt', width: 200, type: 'about' },
+                { name: 'version', default: '1.0', width: 50, type: 'about' }
+            ]
         }]);
     
     const updateConfig = (key,value) => {
@@ -206,10 +215,10 @@ schema: {}}
     return (
         <div className={`app ${appConfig.theme}`} id='app'>
             <div className='header'>
-                <img src={logo} style={{height: '90%'}}/>
+                <img src={logo} style={{height: '80%'}}/>
                 <div className='actions'>
-                    <span className={`action-btn`} style={{ background: '#FF7E7E' }} data-title="Close Board" onClick={() => action === 0 ? setAction(-1) : setAction(0)}></span>
-                    <span className={`action-btn`} style={{ background: '#DDF58B' }} data-title="Save Board" onClick={() => action === 1 ? setAction(-1) : setAction(1)}></span>
+                    <span className={`action-btn`} style={{ background: '#FF7E7E' }} data-title="Save Board" onClick={() => action === 0 ? setAction(-1) : setAction(0)}></span>
+                    <span className={`action-btn`} style={{ background: '#DDF58B' }} data-title="Console" onClick={() => action === 1 ? setAction(-1) : setAction(1)}></span>
                     <span className={`action-btn`} style={{ background: '#7F95EB' }} data-title="Settings" onClick={() => action === 2 ? setAction(-1) : setAction(2)}></span>
                 </div>
             </div>
@@ -217,9 +226,11 @@ schema: {}}
 
             <div className={`container`}>
                 <Editor ref={editor} files={files}
-                    callback={setTree} setCode={setCode} setStats={setStats} addFile={addFile} setCurrent={setCurrent} current={current}/>
+                    callback={setTree} setCode={setCode} setStats={setStats} addFile={addFile} setCurrent={setCurrent} current={current}
+                    appConfig={appConfig}/>
                 <Breadboard tree={tree} stats={stats} 
-                 update={updateTree} updateSchema={updateSchema} schema={files[current].schema}/>
+                 update={updateTree} updateSchema={updateSchema} schema={files[current].schema}
+                 appConfig={appConfig}/>
             </div>
 
             {action === 2 &&
@@ -234,13 +245,30 @@ schema: {}}
                                         {setting.fields.map((field, index) => (
                                             <span className='field'>
                                                 <p style={{ background: 'var(--secondary)', padding: 5, borderRadius: 5 }}>{field.name}</p>
-                                                {field.type !== "select" ?
-                                                    <input defaultValue={field.default} style={{ width: field.width, color: field.type === "color" ? field.default : 'white' }}></input> :
-                                                    <select style={{ width: field.width }} onChange={(e)=>updateConfig(field.name, e.target.value)}>
+                                                {field.type === "select" &&
+                                                    <select style={{ width: field.width }} value={appConfig[field.name]} onChange={(e)=>updateConfig(field.name, e.target.value)}>
                                                         {field.options.map((option, index) => (
                                                             <option value={option}>{option}</option>
                                                         ))}
-                                                    </select>}
+                                                </select>}
+                                                
+                                                {field.type === "about" &&
+                                                    <input defaultValue={field.default} value={appConfig[field.name]} style={{ width: field.width, color: 'white' }} 
+                                                    disabled
+                                                    onChange={(e) => updateConfig(field.name, e.target.value)}></input>
+                                                }
+                                                {field.type === "number" &&
+                                                    <input defaultValue={field.default} value={appConfig[field.name]} style={{ width: field.width, color: 'white' }} onChange={(e) => updateConfig(field.name, e.target.value)}></input>
+                                                }
+                                                {field.type === "color" &&
+                                                    <input defaultValue={field.default} value={appConfig[field.name]} style={{ width: field.width, color: appConfig[field.name] ?appConfig[field.name] : field.default }}
+                                                    onChange={(e) => updateConfig(field.name, e.target.value)}></input>
+                                                }
+                                                {field.type === 'switch'&&
+                                                    <label class="switch">
+                                                    <input type="checkbox" checked={appConfig[field.name]} onChange={(e) => updateConfig(field.name, e.target.checked)}/>
+                                                    <span class="slider round"></span>
+                                              </label>} 
                                             </span>
                                         ))}
                                     </span>
@@ -250,6 +278,39 @@ schema: {}}
                     </div>
                 </div>
             }
+            {action === 1 && 
+            <div className="settings-dropdown">
+                 <div className="settings">
+                 <h1>Console</h1>
+
+                    <span className='settings-container'>
+                        <span className='fields'>
+                           {tree.map((instance,index) => (
+                            <span>
+                                
+                                {instance.inputs.map((pin, index)=>(
+                                    <span className='field' style={{width: '100%', gap: '2em',borderBottom: '1px solid var(--primary)'}}>
+                                        <p style={{ background: 'var(--secondary)', padding: 5, borderRadius: 5, width: '5%', textAlign: 'center' }}>{instance.name}.{pin.name}</p>
+                                        <p style={{color: (pin.voltage === "H" || pin.voltage.includes('hz')) ? 'violet' : 'white', fontSize: 20, width: '5%', textAlign: 'center'}}>{pin.voltage}</p>
+                                        <p style={{fontSize: 20, width: '10%', textAlign: 'center'}}>{pin.value}</p>
+                                        <p style={{fontSize: 20, width: '10%', textAlign: 'center'}}>{instance.step}</p>
+                                    </span>
+                                ))}
+
+                                {instance.outputs.map((pin, index)=>(
+                                    <span className='field' style={{width: '100%', gap: '2em',borderBottom: '1px solid var(--primary)'}}>
+                                        <p style={{ background: 'var(--secondary)', padding: 5, borderRadius: 5, width: '5%', textAlign: 'center' }}>{instance.name}.{pin.name}</p>
+                                        <p style={{color: (pin.voltage === "H" || pin.voltage.includes('hz')) ? 'violet' : 'white', fontSize: 20, width: '5%', textAlign: 'center'}}>{pin.voltage}</p>
+                                        <p style={{fontSize: 20, width: '10%', textAlign: 'center'}}>{pin.value}</p>
+                                        <p style={{fontSize: 20, width: '10%', textAlign: 'center'}}>{instance.step}</p>
+                                    </span>
+                                ))}
+                            </span>
+                           ))}
+                        </span>
+                    </span>
+                 </div>
+                </div>}
         </div>
     )
 }
