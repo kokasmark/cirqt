@@ -3,6 +3,7 @@ import './App.css'
 import Editor from './Editor'
 import Breadboard from './Breadboard'
 import logo from '../banner.png'
+import { Bounce, ToastContainer, toast } from 'react-toastify';
 
 function App() {
     const [tree, setTree] = useState([]);
@@ -210,14 +211,59 @@ schema: {}}
         let updatedConfig = appConfig;
         updatedConfig[key] = value;
         setAppConfig(updatedConfig)
+
+        saveConfig();
+        success('Config saved!')
     }
+
+    const success = (msg) => {
+        toast.success(msg, {
+            position: "bottom-center",
+            autoClose: 2000,
+            hideProgressBar: false,
+            closeOnClick: false,
+            pauseOnHover: true,
+            draggable: true,
+            progress: undefined,
+            theme: "dark",
+            transition: Bounce,
+            });
+    }
+
+    const saveFiles = () =>{
+        localStorage.setItem('cirqt-files', JSON.stringify(files))
+        localStorage.setItem('cirqt-files-savedAt', Date.now())
+    }
+
+    const saveConfig = () =>{
+        localStorage.setItem('cirqt-config', JSON.stringify(appConfig))
+        localStorage.setItem('cirqt-config-savedAt', Date.now())
+    }
+
+    useEffect(()=>{
+        success('Cirqt loaded!')
+
+        let savedFiles = JSON.parse(localStorage.getItem('cirqt-files'));
+        if(savedFiles){
+            setFiles(savedFiles)
+            let savedAt = new Date(localStorage.getItem('cirqt-files-savedAt')*1);
+            success(`Loaded Project from ${savedAt.getFullYear()} / ${savedAt.getMonth()+1} / ${savedAt.getDate()}`)
+        }
+
+        let savedConfig= JSON.parse(localStorage.getItem('cirqt-config'));
+        if(savedConfig){
+            setAppConfig(savedConfig)
+            let savedAt = new Date(localStorage.getItem('cirqt-config-savedAt')*1);
+            success(`Loaded Config from ${savedAt.getFullYear()} / ${savedAt.getMonth()+1} / ${savedAt.getDate()}`)
+        }
+    },[])
 
     return (
         <div className={`app ${appConfig.theme}`} id='app'>
             <div className='header'>
                 <img src={logo} style={{height: '80%'}}/>
                 <div className='actions'>
-                    <span className={`action-btn`} style={{ background: '#FF7E7E' }} data-title="Save Board" onClick={() => action === 0 ? setAction(-1) : setAction(0)}></span>
+                    <span className={`action-btn`} style={{ background: '#FF7E7E' }} data-title="Save Project" onClick={() => {saveFiles();success('Project saved!')}}></span>
                     <span className={`action-btn`} style={{ background: '#DDF58B' }} data-title="Console" onClick={() => action === 1 ? setAction(-1) : setAction(1)}></span>
                     <span className={`action-btn`} style={{ background: '#7F95EB' }} data-title="Settings" onClick={() => action === 2 ? setAction(-1) : setAction(2)}></span>
                 </div>
