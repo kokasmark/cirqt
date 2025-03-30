@@ -55,6 +55,7 @@ function Breadboard({tree, update, stats, updateSchema,schema,appConfig}) {
 
 return (
   <div className="breadboard"
+  id='breadboard'
   onPointerEnter={() => {
     if (appConfig['animateBackground']) {
         document.getElementById("app").style.setProperty('--left-side-percent', '40%');

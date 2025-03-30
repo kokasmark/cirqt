@@ -464,7 +464,7 @@ const Editor = forwardRef(({ callback, files, setCode, setStats,addFile,setCurre
     
 
     useEffect(()=>{
-        dismantle( files[current].code);
+        dismantle(files[current]? files[current].code : '');
     }, [current])
 
     useImperativeHandle(ref, () => ({
@@ -475,6 +475,7 @@ const Editor = forwardRef(({ callback, files, setCode, setStats,addFile,setCurre
 
     return (
         <div className="editor"
+        id="editor"
             onPointerEnter={() => {
                 if (appConfig['animateBackground']) {
                     document.getElementById("app").style.setProperty('--left-side-percent', '120%');
@@ -502,13 +503,13 @@ const Editor = forwardRef(({ callback, files, setCode, setStats,addFile,setCurre
                 </span>
             </div>
             <textarea
-                value={files[current].code}
+                value={files[current]? files[current].code : ''}
                 onKeyDown={handleKeyDown}
                 onChange={(e) => {setCode(current,e.target.value); dismantle(e.target.value)}}
             />
 
             <pre className="highlighted">
-                <code>{highlightSyntax( files[current].code)}</code>
+                <code>{highlightSyntax(files[current]? files[current].code : '')}</code>
             </pre>
 
             <ToastContainer
