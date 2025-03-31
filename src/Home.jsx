@@ -4,8 +4,10 @@ import { IoAddCircleOutline } from "react-icons/io5";
 import { Link } from "react-router-dom";
 
 import { LiaSlackHash } from "react-icons/lia";
-import { FaTrash } from "react-icons/fa";
+import { FaGithub, FaTrash } from "react-icons/fa";
 import { CiExport, CiImport } from "react-icons/ci";
+import { FaMicrochip } from "react-icons/fa";
+import { MdError } from "react-icons/md";
 
 function Home(){
     const [projects, setProjects] = useState([])
@@ -118,17 +120,35 @@ schema: {}}], savedAt: Date.now(), icon: null };
                 <img src={logo} />
                 <h1 style={{fontSize: '10vmin'}}>cirqt</h1>
             </div>
+            <span className="info">
+                <span>
+                    <FaMicrochip fontSize={"2em"}/>
+                    <p>in cirqt you write code that describes a circuit, this way the wiring is automatically done by the evaluator.</p>
+                </span>
+                <span>
+                    <FaGithub fontSize={"2em"}/>
+                    <p>https://github.com/kokasmark/cirqt</p>
+                </span>
+                <span>
+                    <MdError fontSize={"2em"}/>
+                    <p>https://github.com/kokasmark/cirqt/issues</p>
+                </span>
+            </span>
             <div className="projects">
-
                 {projects.map((project,index)=>(
                         <div className="project-container">
                             <Link to={`/editor/${index}`} className="project">
                                 <span style={{display: 'flex', gap: 5, alignItems: 'center'}}>
-                                    <LiaSlackHash fontSize={'5em'}/>
+                                    <LiaSlackHash filter={'none'} fontSize={'5em'}/>
                                     <h1>{index}</h1>
                                 </span>
                                 <img src={project.icon}/>
-                                <p>{formatUpdatedString(project.savedAt *1)}</p>
+                                <p style={{fontWeight: 'bolder'}}>{formatUpdatedString(project.savedAt *1)}</p>
+                                <span style={{display: 'flex', gap: 5, fontStyle: 'italic', fontSize: 10}}>
+                                    {project.files.slice(0,5).map((file,index)=>(
+                                        <p>{file.title}.cqt {index+1 < project.files.length ? '|' : ''}</p>
+                                    ))}
+                                </span>
                             </Link>
 
                             <div className="actions">
