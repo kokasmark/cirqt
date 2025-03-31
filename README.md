@@ -2,9 +2,8 @@
 
 A programming language where you write code that "compiles" into circuits
 
-
-![code](editor.png) | ![code](settings.png)
--|-
+![home](home.png)
+![code](editor.png)
 
 # Documentation
 

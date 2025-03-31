@@ -3,6 +3,11 @@
   src: url(./fonts/VT323-Regular.ttf);
 }
 
+@font-face {
+  font-family: ff-moon;
+  src: url(./fonts/FfMoon-Regular.ttf);
+}
+
 @property --left-side-percent {
   syntax: '<percentage>'; 
   initial-value: 60%;
@@ -62,6 +67,8 @@
   height: 80%;
   overflow-y: auto;
   margin-top: 2em;
+
+  justify-content: center;
 }
 .home .projects .project-container{
   width: 15%;
@@ -70,6 +77,7 @@
   min-width: 300px;
 
   transition: 0.3s;
+
 }
 .home .projects .project{
   width: 100%;
@@ -105,9 +113,9 @@
   position: absolute;
   height: 100%;
   filter: blur(1px);
-  transform: scale(2.0)  translateX(25%) translateY(25%);
-
+  transform: scale(1.5)  translateX(25%) translateY(25%);
   transition: 1s;
+  z-index: -1;
 }
 .home .projects .project-container:hover img{
   filter: blur(0px);
@@ -646,6 +654,7 @@ input:checked + .slider:before {
     transform: scale(1);
   }
 }
+
 
 @media only screen and (max-width: 1000px) {
   .app{

@@ -1,4 +1,4 @@
-import { useEffect, useState, forwardRef, useImperativeHandle } from "react";
+import { useEffect, useState, forwardRef, useImperativeHandle, useRef } from "react";
 import "./App.css";
 import { Bounce, ToastContainer, toast } from 'react-toastify';
 
@@ -51,6 +51,7 @@ const Editor = forwardRef(({ callback, files, setCode, setStats,addFile,setCurre
     `
 
     const [tree, setTree] = useState([]);
+    const [scroll, setScroll] = useState(0)
 
     const operators = ["<", ">", "?", ":", "[", "]"];
     const gates = ["&", "|", "!", "x"];
@@ -471,7 +472,14 @@ const Editor = forwardRef(({ callback, files, setCode, setStats,addFile,setCurre
         evaluate
     }));
 
+    const textareaRef = useRef(null);
+    const preRef = useRef(null);
 
+    const syncScroll = () => {
+        if (textareaRef.current && preRef.current) {
+            preRef.current.scrollTop = textareaRef.current.scrollTop;
+        }
+    };
 
     return (
         <div className="editor"
@@ -503,13 +511,15 @@ const Editor = forwardRef(({ callback, files, setCode, setStats,addFile,setCurre
                 </span>
             </div>
             <textarea
-                value={files[current]? files[current].code : ''}
+                ref={textareaRef}
+                value={files[current] ? files[current].code : ''}
                 onKeyDown={handleKeyDown}
-                onChange={(e) => {setCode(current,e.target.value); dismantle(e.target.value)}}
+                onChange={(e) => { setCode(current, e.target.value); dismantle(e.target.value); }}
+                onScroll={syncScroll}
             />
 
-            <pre className="highlighted">
-                <code>{highlightSyntax(files[current]? files[current].code : '')}</code>
+            <pre className="highlighted" ref={preRef}>
+                <code>{highlightSyntax(files[current] ? files[current].code : '')}</code>
             </pre>
 
             <ToastContainer

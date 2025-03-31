@@ -10,6 +10,7 @@ import { GrPowerCycle } from "react-icons/gr";
 import { FaMicrochip } from "react-icons/fa";
 import { RiTimerLine } from "react-icons/ri";
 import { RiRestTimeLine } from "react-icons/ri";
+import SevenSegment from './7Segment';
 
 function Breadboard({tree, update, stats, updateSchema,schema,appConfig}) {
   const updateXarrow = useXarrow();
@@ -46,7 +47,7 @@ function Breadboard({tree, update, stats, updateSchema,schema,appConfig}) {
 
   const [connections,setConnections] = useState(getConnections(tree));
 
-  const predefinedCircuits = ["rled", "gled", "bled", "switch", "matrix4x4", "clock"]
+  const predefinedCircuits = ["rled", "gled", "bled", "switch", "matrix4x4", "clock","sevensegment"]
 
   useEffect(()=>{
     console.log('Wiring...')
@@ -95,6 +96,7 @@ onPointerLeave={()=>() => {
             {circuit.circuit === "bled" && <Led circuit={circuit} index={index} updateXarrow={updateXarrow} color={'#7F95EB'}  updateSchema={updateSchema} schema={schema}/>}
             {circuit.circuit === "switch" && <Switch circuit={circuit} index={index} updateXarrow={updateXarrow} update={update}  updateSchema={updateSchema} schema={schema}/>}
             {circuit.circuit === "clock" && <Clock circuit={circuit} index={index} updateXarrow={updateXarrow} update={update}  updateSchema={updateSchema} schema={schema}/>}
+            {circuit.circuit === "sevensegment" && <SevenSegment circuit={circuit} index={index} updateXarrow={updateXarrow} color={'#7F95EB'}  updateSchema={updateSchema} schema={schema}/>}
             {!predefinedCircuits.includes(circuit.circuit) && <Circuit circuit={circuit} index={index} updateXarrow={updateXarrow} updateSchema={updateSchema} schema={schema}/>}
           </span>
       ))}

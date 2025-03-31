@@ -139,21 +139,36 @@ schema: {}}
             transition: Bounce,
             });
     }
+    const error = (msg) => {
+        toast.error(msg, {
+            position: "bottom-center",
+            autoClose: 2000,
+            hideProgressBar: false,
+            closeOnClick: false,
+            pauseOnHover: true,
+            draggable: true,
+            progress: undefined,
+            theme: "dark",
+            transition: Bounce,
+            });
+    }
 
     const saveProject = async () => {
         const projects = JSON.parse(localStorage.getItem('cirqt-projects')) || [];
         let updatedProjects = projects;
         const icon = await getProjectIcon();
-    
+        
         if (projects.some(p => p.id == projectId)) {
             updatedProjects = projects.map(p => 
-                p.id === projectId ? { ...p, files, savedAt: Date.now(), icon } : p
+                p.id == projectId ? { ...p, files, savedAt: Date.now(), icon } : p
             );
         }else{
-
+            error(`Couldnt save project with id: ${projectId}`)
         }
     
         localStorage.setItem('cirqt-projects', JSON.stringify(updatedProjects));
+
+        success('Project saved!');
     };
     
     
@@ -202,7 +217,7 @@ schema: {}}
                 <div className='header'>
                     <img src={logo} style={{height: '80%'}} onClick={()=> navigate('/')}/>
                     <div className='actions'>
-                        <span className={`action-btn`} style={{ background: '#FF7E7E' }} data-title="Save Project" onClick={() => {saveProject();success('Project saved!')}}></span>
+                        <span className={`action-btn`} style={{ background: '#FF7E7E' }} data-title="Save Project" onClick={() => {saveProject()}}></span>
                         <span className={`action-btn`} style={{ background: '#DDF58B' }} data-title="Console" onClick={() => action === 1 ? setAction(-1) : setAction(1)}></span>
                         <span className={`action-btn`} style={{ background: '#7F95EB' }} data-title="Settings" onClick={() => action === 2 ? setAction(-1) : setAction(2)}></span>
                     </div>

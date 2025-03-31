@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import logo from '../logo.png';
 import { IoAddCircleOutline } from "react-icons/io5";
-import { Link } from "react-router-dom";
+import { Link,useNavigate } from "react-router-dom";
 
 import { LiaSlackHash } from "react-icons/lia";
 import { FaGithub, FaTrash } from "react-icons/fa";
@@ -11,7 +11,8 @@ import { MdError } from "react-icons/md";
 
 function Home(){
     const [projects, setProjects] = useState([])
-
+    const [opening, setOpening] = useState(-1);
+    const navigate = useNavigate();
     useEffect(()=>{
         const projects = JSON.parse(localStorage.getItem('cirqt-projects')) || [];
         setProjects(projects)
@@ -60,6 +61,9 @@ function Home(){
 [not <in >out
     out < ! in
 ]
+[sevensegment <a <b <c <d <e <f <g <clk
+    
+]
 [sr_latch <S <R >Q >QN
     Q < ! (R | QN)
     QN < ! (S | Q)
@@ -78,6 +82,11 @@ schema: {}}], savedAt: Date.now(), icon: null };
         setProjects(projects)
         localStorage.setItem('cirqt-projects', JSON.stringify(projects));
     };
+
+    const openProject = (id) =>{
+        setOpening(id);
+        navigate(`/editor/${id}`)
+    }
     
     const formatUpdatedString = (timestamp) => {
         const now = Date.now();
@@ -118,13 +127,9 @@ schema: {}}], savedAt: Date.now(), icon: null };
         <div className="home">
             <div className="header">
                 <img src={logo} />
-                <h1 style={{fontSize: '10vmin'}}>cirqt</h1>
+                <h1 style={{fontSize: '10vmin',fontFamily: 'ff-moon'}}>cirqt</h1>
             </div>
             <span className="info">
-                <span>
-                    <FaMicrochip fontSize={"2em"}/>
-                    <p>in cirqt you write code that describes a circuit, this way the wiring is automatically done by the evaluator.</p>
-                </span>
                 <span>
                     <FaGithub fontSize={"2em"}/>
                     <p>https://github.com/kokasmark/cirqt</p>
@@ -137,7 +142,7 @@ schema: {}}], savedAt: Date.now(), icon: null };
             <div className="projects">
                 {projects.map((project,index)=>(
                         <div className="project-container">
-                            <Link to={`/editor/${index}`} className="project">
+                            <span onClick={()=>openProject(project.id)} className={`project ${opening === project.id ? 'opening' :''}`}>
                                 <span style={{display: 'flex', gap: 5, alignItems: 'center'}}>
                                     <LiaSlackHash filter={'none'} fontSize={'5em'}/>
                                     <h1>{index}</h1>
@@ -149,7 +154,7 @@ schema: {}}], savedAt: Date.now(), icon: null };
                                         <p>{file.title}.cqt {index+1 < project.files.length ? '|' : ''}</p>
                                     ))}
                                 </span>
-                            </Link>
+                            </span>
 
                             <div className="actions">
                                 <span className="action" onClick={()=>removeProject(index)}>

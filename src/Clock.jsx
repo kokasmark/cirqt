@@ -9,7 +9,7 @@ function Clock({circuit, index, updateXarrow,update,updateSchema,schema}){
     useEffect(() => {
         console.log(circuit)
         if (!timer) {
-            let hz = circuit.inputs[0].value.replace('hz', '').trim();
+            let hz = circuit.inputs[0].value ? circuit.inputs[0].value.replace('hz', '').trim() : 0;
             let frequency = parseFloat(hz);
             console.log(frequency)
 
