@@ -9,6 +9,8 @@ import { CiExport, CiImport } from "react-icons/ci";
 import { FaMicrochip } from "react-icons/fa";
 import { MdError } from "react-icons/md";
 
+import { Bounce, ToastContainer, toast } from 'react-toastify';
+
 function Home(){
     const [projects, setProjects] = useState([])
     const [opening, setOpening] = useState(-1);
@@ -17,6 +19,35 @@ function Home(){
         const projects = JSON.parse(localStorage.getItem('cirqt-projects')) || [];
         setProjects(projects)
     },[])
+
+
+    const error = (msg) => {
+        toast.error(msg, {
+            position: "bottom-center",
+            autoClose: 2000,
+            hideProgressBar: false,
+            closeOnClick: false,
+            pauseOnHover: true,
+            draggable: true,
+            progress: undefined,
+            theme: "dark",
+            transition: Bounce,
+            });
+    }
+
+    const success = (msg) => {
+        toast.success(msg, {
+            position: "bottom-center",
+            autoClose: 2000,
+            hideProgressBar: false,
+            closeOnClick: false,
+            pauseOnHover: true,
+            draggable: true,
+            progress: undefined,
+            theme: "dark",
+            transition: Bounce,
+            });
+    }
 
     const addProject = () => {
         let projects = JSON.parse(localStorage.getItem('cirqt-projects')) || [];
@@ -78,9 +109,10 @@ schema: {}}], savedAt: Date.now(), icon: null };
     
     const removeProject = (id) => {
         let projects = JSON.parse(localStorage.getItem('cirqt-projects')) || [];
-        projects = projects.filter(p => p.id !== id);
+        projects = projects.filter(p => p.id != id);
         setProjects(projects)
         localStorage.setItem('cirqt-projects', JSON.stringify(projects));
+        success(`Removed project #${id}`)
     };
 
     const openProject = (id) =>{
@@ -122,9 +154,43 @@ schema: {}}], savedAt: Date.now(), icon: null };
         link.click();
     };
     
+    const importProject = () => {
+        const input = document.createElement("input");
+        input.type = "file";
+        input.accept = ".cqt";
+        input.style.display = "none";
+    
+        input.onchange = (event) => {
+            const file = event.target.files[0];
+            if (!file) return;
+    
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    let projects = JSON.parse(localStorage.getItem("cirqt-projects")) || [];
+                    let importedProject = JSON.parse(e.target.result);
+    
+                    importedProject.id = projects.length;
+                    projects.push(importedProject);
+    
+                    localStorage.setItem("cirqt-projects", JSON.stringify(projects));
+                    setProjects(projects)
+                    success("Successfully imported project!");
+                } catch (e) {
+                   error("Invalid project file!");
+                }
+            };
+            reader.readAsText(file);
+        };
+    
+        document.body.appendChild(input);
+        input.click();
+        document.body.removeChild(input);
+    };
 
     return(
         <div className="home">
+            <span className="background"></span>
             <div className="header">
                 <img src={logo} />
                 <h1 style={{fontSize: '10vmin',fontFamily: 'ff-moon'}}>cirqt</h1>
@@ -140,6 +206,18 @@ schema: {}}], savedAt: Date.now(), icon: null };
                 </span>
             </span>
             <div className="projects">
+                <div className="project-container">
+                    <span className="project" onClick={()=>addProject()}>
+                        <IoAddCircleOutline fontSize={'10em'}/>
+                        <h2>New Project</h2>
+                    </span>
+                    <div className="actions">
+                        <span className="action" onClick={()=>importProject()}>
+                            <CiImport fontSize={'3vmin'}/>
+                            <p>Import Project</p>
+                        </span>
+                    </div>
+                </div>
                 {projects.map((project,index)=>(
                         <div className="project-container">
                             <span onClick={()=>openProject(project.id)} className={`project ${opening === project.id ? 'opening' :''}`}>
@@ -168,19 +246,21 @@ schema: {}}], savedAt: Date.now(), icon: null };
                             </div>
                         </div>
                 ))}
-               <div className="project-container">
-                    <span className="project" onClick={()=>addProject()}>
-                        <IoAddCircleOutline fontSize={'10em'}/>
-                        <h2>New Project</h2>
-                    </span>
-                    <div className="actions">
-                        <span className="action">
-                            <CiImport fontSize={'3vmin'}/>
-                            <p>Import Project</p>
-                        </span>
-                    </div>
-               </div>
             </div>
+
+            <ToastContainer
+                position="bottom-center"
+                autoClose={2000}
+                hideProgressBar={false}
+                newestOnTop={false}
+                closeOnClick={false}
+                rtl={false}
+                pauseOnFocusLoss
+                draggable
+                pauseOnHover
+                theme="dark"
+                transition={Bounce}
+                />
         </div>
     );
 }

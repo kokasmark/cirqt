@@ -214,6 +214,7 @@ schema: {}}
     if(currentProject){
         return (
             <div className={`app ${appConfig.theme}`} id='app'>
+                <span className='background'></span>
                 <div className='header'>
                     <img src={logo} style={{height: '80%'}} onClick={()=> navigate('/')}/>
                     <div className='actions'>

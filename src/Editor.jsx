@@ -6,49 +6,7 @@ import { Bounce, ToastContainer, toast } from 'react-toastify';
 let lastEvaluation = 0;
 
 const Editor = forwardRef(({ callback, files, setCode, setStats,addFile,setCurrent,current, appConfig }, ref) => {
-    const circuits = `
-    [rled <in >out
-        out < in
-    ]
-    [gled <in >out
-        out < in
-    ]
-    [bled <in >out
-        out < in
-    ]
-    [switch <in >out
-        out < in
-    ]
-    [matrix4x4]
-    [clock <hz >out
-        
-    ]
-    [and <a <b >out
-        out < a & b
-    ]
-    [nand <a <b >out
-        out < a !& b
-    ]
-    [or <a <b >out
-        out < a | b
-    ]
-    [nor <a <b >out
-        out < a !| b
-    ]
-    [xor <a <b >out
-        out < a x| b
-    ]
-    [xnor <a <b >out
-        out < a x!| b
-    ]
-    [not <in >out
-        out < ! in
-    ]
-    [sr_latch <S <R >Q >QN
-        Q < ! (R | QN)
-        QN < ! (S | Q)
-    ]
-    `
+    const circuits = files[0] ? files[0].code : '';
 
     const [tree, setTree] = useState([]);
     const [scroll, setScroll] = useState(0)
@@ -106,19 +64,41 @@ const Editor = forwardRef(({ callback, files, setCode, setStats,addFile,setCurre
 
     const handleKeyDown = (event) => {
         if (event.key === "Tab") {
-          event.preventDefault();
+            event.preventDefault();
+    
+            const { selectionStart, selectionEnd, value } = event.target;
+            const lines = value.substring(selectionStart, selectionEnd).split("\n");
+            const isMultiline = lines.length > 1 || selectionStart !== selectionEnd;
+    
+            let newCode;
+            let newCursorStart = selectionStart;
+            let newCursorEnd = selectionEnd;
+    
+            if (isMultiline) {
+                const beforeSelection = value.substring(0, selectionStart);
+                const afterSelection = value.substring(selectionEnd);
 
-          const cursorPosition = event.target.selectionStart;
-          const newCode =  files[current].code.slice(0, cursorPosition) + "    " +  files[current].code.slice(cursorPosition);
-  
-          setCode(current,newCode);
+                const indentedLines = lines.map(line => "    " + line).join("\n");
+    
+                newCode = beforeSelection + indentedLines + afterSelection;
 
-          setTimeout(() => {
-            event.target.selectionStart = cursorPosition + 4;
-            event.target.selectionEnd = cursorPosition + 4;
-          }, 0);
+                newCursorStart += 4;
+                newCursorEnd += 4 * lines.length; 
+            } else {
+                newCode = value.slice(0, selectionStart) + "    " + value.slice(selectionStart);
+                newCursorStart += 4;
+                newCursorEnd += 4;
+            }
+    
+            setCode(current, newCode);
+    
+            setTimeout(() => {
+                event.target.selectionStart = newCursorStart;
+                event.target.selectionEnd = newCursorEnd;
+            }, 0);
         }
     };
+    
 
     const handleAddFile = () =>{
         addFile('New Board')
