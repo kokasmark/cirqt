@@ -5,7 +5,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-d
 import Home from './Home.jsx';
 
 createRoot(document.getElementById('root')).render(
-  <Router>
+  <Router basename='/cirqt'>
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/editor/:projectId" element={<App />} />
